@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p .",
     "start": "node index.js",
-    "apx-generate": "tsx ./bin/codegen.ts", 
-	"postinstall": "tsc -t es2022 -m es2022 --outDir ./bin codegen.ts "
+    "apx-generate": "tsx ./bin/codegen.ts",
+    "postinstall": "tsc -t es2022 -m nodenext --moduleResolution nodenext --outDir ./bin codegen.ts "
   },
   "bin": {
     "apx-gen": "./bin/codegen.js"
@@ -18,7 +18,11 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/node": "^22.13.14",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1"
   }
 }

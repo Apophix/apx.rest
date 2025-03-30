@@ -67,8 +67,6 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		const headers = this.buildHeaders(options);
 		const bodyJson = JSON.stringify(body);
-
-		console.log('POST', url, headers, bodyJson);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: 'POST',

@@ -196,10 +196,15 @@ export class Generator {
 		log(chalk.greenBright("Components processed successfully."));
 		log(chalk.blueBright("Generating client code..."));
 
-		let outputStr = "";
+		let outputStr = "import { ApiClient } from \"apx.rest\";\n\n";
 
 		for (const requestComponent of requestComponents.values()) {
 			outputStr += requestComponent.render();
+			outputStr += "\n\n";
+		}
+
+		for (const responseComponent of responseComponents.values()) {
+			outputStr += responseComponent.render();
 			outputStr += "\n\n";
 		}
 
@@ -210,11 +215,6 @@ export class Generator {
 
 		for (const modelComponent of modelComponents.values()) {
 			outputStr += modelComponent.render();
-			outputStr += "\n\n";
-		}
-
-		for (const enumComponent of enumComponents.values()) {
-			outputStr += enumComponent.render();
 			outputStr += "\n\n";
 		}
 
@@ -252,7 +252,11 @@ export class Generator {
 
 		outputStr += "}";
 
-		log(chalk.magenta(outputStr));
+		const outputPath = await configProvider.getValue<string>("outputBaseDirectory");
+		const outputDir = path.join(process.cwd(), outputPath);
+		await fs.mkdir(outputDir, { recursive: true });
+		const newFile = path.join(outputDir, `${clientName}.ts`);
+		await fs.writeFile(newFile, outputStr);
 
 		log(chalk.greenBright("Client code generated successfully."));
 	}
@@ -382,7 +386,7 @@ class EnumComponent implements TEnumComponent {
 	}
 
 	public render(): string {
-		return `export enum E${this.capitalizedName} {
+		return `export enum ${this.capitalizedName} {
 ${this.values.map((value) => `\t${value}`).join(",\n")}
 }`;
 	}
@@ -425,7 +429,7 @@ class Component implements TComponentDto {
 	public render(): string {
 		let str = this.renderDto();
 		str += "\n";
-		str += `export class ${this.capitalizedName} implements ${this.renderImplementsDto} {\n`;
+		str += `export class ${this.capitalizedName} {\n`;
 
 		for (const property of this.properties) {
 			str += `\tpublic ${property.render()}\n`;
@@ -489,6 +493,10 @@ class RequestComponent extends Component {
 		str += `};`;
 		return str;
 	}
+
+	public override get dtoName(): string {
+		return `T${this.capitalizedName}`;
+	}
 }
 
 class ResponseComponent extends Component { }
@@ -509,7 +517,7 @@ class Property implements TPropertyDto {
 	public format?: string;
 	public ["$ref"]?: string;
 	public referenceIsEnum: boolean;
-
+	
 	public constructor(dto: TPropertyDto) {
 		this.name = dto.name;
 		this.type = dto.type;

@@ -132,6 +132,7 @@ export class Generator {
 									["$ref"]: property["$ref"],
 									referenceIsEnum,
 									items: property["items"],
+									additionalProperties: property["additionalProperties"],
 								});
 							}
 						),
@@ -164,6 +165,7 @@ export class Generator {
 									["$ref"]: property["$ref"],
 									referenceIsEnum,
 									items: property["items"],
+									additionalProperties: property["additionalProperties"],
 								});
 							}
 						),
@@ -196,6 +198,7 @@ export class Generator {
 							["$ref"]: property["$ref"],
 							referenceIsEnum,
 							items: property["items"],
+							additionalProperties: property["additionalProperties"],
 						});
 					}),
 				})
@@ -540,6 +543,20 @@ class Component implements TComponentDto {
 					continue;
 				}
 			}
+
+			if (property.isDictionary) {
+				if (property.additionalProperties?.isArray) {
+					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
+						property.name
+					}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+						"[]",
+						""
+					)}(item))]));`;
+					continue;
+				}
+				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
+				continue;
+			}
 			str += `\n\t\tthis.${property.name} = dto.${property.name};`;
 		}
 		str += `
@@ -595,6 +612,7 @@ type TPropertyDto = {
 	["$ref"]?: string;
 	referenceIsEnum: boolean;
 	items?: TPropertyDto; // for arrays
+	additionalProperties?: TPropertyDto; // for dictionaries
 };
 
 class Property implements TPropertyDto {
@@ -605,6 +623,7 @@ class Property implements TPropertyDto {
 	public ["$ref"]?: string;
 	public referenceIsEnum: boolean;
 	public items?: Property; // for arrays
+	public additionalProperties?: Property; // for dictionaries
 
 	public constructor(dto: TPropertyDto) {
 		this.name = dto.name;
@@ -614,6 +633,9 @@ class Property implements TPropertyDto {
 		this["$ref"] = dto["$ref"];
 		this.referenceIsEnum = dto.referenceIsEnum;
 		this.items = dto.items ? new Property(dto.items) : undefined;
+		this.additionalProperties = dto.additionalProperties
+			? new Property(dto.additionalProperties)
+			: undefined;
 	}
 
 	public get referenceComponentName(): string | undefined {
@@ -624,6 +646,10 @@ class Property implements TPropertyDto {
 
 	public get isArray(): boolean {
 		return this.type === "array";
+	}
+
+	public get isDictionary(): boolean {
+		return this.type === "object" && !!this.additionalProperties;
 	}
 
 	public get isDate(): boolean {
@@ -647,6 +673,10 @@ class Property implements TPropertyDto {
 			return `${arrayProperty.type}[]`;
 		}
 
+		if (this.isDictionary) {
+			return `Record<string, ${this.additionalProperties?.formattedDtoType}>`;
+		}
+
 		return this.type;
 	}
 
@@ -668,6 +698,11 @@ class Property implements TPropertyDto {
 			if (arrayProperty.referenceComponentName) return `${arrayProperty.referenceComponentName}[]`;
 			return `${arrayProperty.type}[]`;
 		}
+
+		if (this.isDictionary) {
+			return `Map<string, ${this.additionalProperties?.formattedType}>`;
+		}
+
 		return this.type;
 	}
 

@@ -5,8 +5,8 @@ export abstract class ApiClient {
 
 	public constructor(baseUrl: string) {
 		// Add a trailing slash to the baseUrl if there isn't one
-		if (baseUrl && !baseUrl.endsWith('/')) {
-			baseUrl = baseUrl + '/';
+		if (baseUrl && !baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
 		}
 		this._baseUrl = baseUrl;
 	}
@@ -16,14 +16,14 @@ export abstract class ApiClient {
 	}
 
 	public buildUrl(path: string): string {
-		if (path.startsWith('/')) {
+		if (path.startsWith("/")) {
 			path = path.substring(1);
 		}
 		return `${this.baseUrl}${path}`;
 	}
 
 	protected basicHeaders: Record<string, string> = {
-		'Content-Type': 'application/json',
+		"Content-Type": "application/json",
 	};
 
 	public withBearerTokenProvider(provider: () => string): void {
@@ -33,14 +33,14 @@ export abstract class ApiClient {
 	private buildHeaders(options?: TApiRequestOptions): Record<string, string> {
 		const headers = options?.requestHeaders || {};
 		for (const [key, value] of Object.entries(this.basicHeaders)) {
-			headers[key] = value
+			headers[key] = value;
 		}
 		if (options?.useBearerToken || this._defaultToUseBearerToken) {
 			const token = this._bearerTokenProvider?.();
 			if (!token) {
-				throw new Error('Bearer token is not provided');
+				throw new Error("Bearer token is not provided");
 			}
-			headers['Authorization'] = `Bearer ${token}`;
+			headers["Authorization"] = `Bearer ${token}`;
 		}
 
 		return headers;
@@ -54,7 +54,7 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
-			method: 'GET',
+			method: "GET",
 			headers: this.buildHeaders(options),
 		});
 
@@ -63,13 +63,17 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
-	public async post<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
+	public async post<T>(
+		path: string,
+		body: unknown,
+		options?: TApiRequestOptions
+	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		const headers = this.buildHeaders(options);
 		const bodyJson = JSON.stringify(body);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
-			method: 'POST',
+			method: "POST",
 			headers: headers,
 			body: bodyJson,
 		});
@@ -83,7 +87,7 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
-			method: 'PUT',
+			method: "PUT",
 			headers: this.buildHeaders(options),
 			body: JSON.stringify(body),
 		});
@@ -93,11 +97,15 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
-	public async patch<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
+	public async patch<T>(
+		path: string,
+		body: unknown,
+		options?: TApiRequestOptions
+	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
-			method: 'PATCH',
+			method: "PATCH",
 			headers: this.buildHeaders(options),
 			body: JSON.stringify(body),
 		});
@@ -111,7 +119,7 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
-			method: 'DELETE',
+			method: "DELETE",
 			headers: this.buildHeaders(options),
 		});
 
@@ -120,28 +128,202 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
+	public async *getRawIterable(path: string, options?: TApiRequestOptions) { 
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const response = await fetch(url, {
+			method: "GET",
+			headers: this.buildHeaders(options),
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	public async *postRawIterable(path: string, body: unknown, options?: TApiRequestOptions) {
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const bodyJson = JSON.stringify(body);
+		const response = await fetch(url, {
+			method: "POST",
+			body: bodyJson,
+			headers: this.buildHeaders(options),
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	public async *putRawIterable(path: string, body: unknown, options?: TApiRequestOptions) {
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const bodyJson = JSON.stringify(body);
+		const response = await fetch(url, {
+			method: "PUT",
+			body: bodyJson,
+			headers: this.buildHeaders(options),
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	public async *patchRawIterable(path: string, body: unknown, options?: TApiRequestOptions) {
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const bodyJson = JSON.stringify(body);
+		const response = await fetch(url, {
+			method: "PATCH",
+			body: bodyJson,
+			headers: this.buildHeaders(options),
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	public async *deleteRawIterable(path: string, options?: TApiRequestOptions) {
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const response = await fetch(url, {
+			method: "DELETE",
+			headers: this.buildHeaders(options),
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	protected handleResponseChunk<T>(chunk: Uint8Array<ArrayBufferLike>): T {
+		const text = new TextDecoder("utf-8").decode(chunk);
+		if (!text) {
+			throw new Error("Response body is null");
+		}
+		// get the 3rd line of the text
+		const lines = text.split("\n");
+		if (lines.length < 3) {
+			throw new Error("Streamed response chunk is not valid.");
+		}
+
+		const jsonLine = lines[2];
+		if (!jsonLine) {
+			throw new Error("Streamed response chunk is not valid.");
+		}
+		// strip data: from the json line
+		const json = jsonLine.substring(jsonLine.indexOf("{"));
+		if (!json) {
+			throw new Error("Streamed response chunk is not valid.");
+		}
+		// parse the json line
+		const data = JSON.parse(json) as T;
+		if (!data) {
+			throw new Error("Streamed response chunk is not valid.");
+		}
+
+		return data;
+	}
+
+	public async *getIterable<T>(path: string, options?: TApiRequestOptions) : AsyncGenerator<T> { 
+		for await (const chunk of this.getRawIterable(path, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
+
+	public async *postIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+		for await (const chunk of this.postRawIterable(path, body, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
+
+	public async *putIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+		for await (const chunk of this.putRawIterable(path, body, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
+
+	public async *patchIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+		for await (const chunk of this.patchRawIterable(path, body, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
+
+	public async *deleteIterable<T>(path: string, options?: TApiRequestOptions): AsyncGenerator<T> {
+		for await (const chunk of this.deleteRawIterable(path, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
 }
 
 export enum EExpectedDataResponseType {
-	Json = 'json',
-	Text = 'text',
-	Blob = 'blob',
+	Json = "json",
+	Text = "text",
+	Blob = "blob",
 }
 
 export type TApiRequestOptions = {
 	requestHeaders?: Record<string, string>;
 	useBearerToken?: boolean;
-	// not implemented yet 
+	// not implemented yet
 	expectedDataResponseType?: EExpectedDataResponseType;
-}
+};
 
 export type TApiResponse<T> = {
 	data?: T;
 	response: Response;
-}
+};
 
 const DEFAULT_REQUEST_OPTIONS: TApiRequestOptions = {
-	requestHeaders: { 'Content-Type': 'application/json' },
+	requestHeaders: { "Content-Type": "application/json" },
 	useBearerToken: false,
 	expectedDataResponseType: EExpectedDataResponseType.Json,
-} as const; 
+} as const;

@@ -468,7 +468,7 @@ class EnumComponent implements TEnumComponent {
 
 	public render(): string {
 		return `export enum ${this.capitalizedName} {
-${this.values.map((value) => `\t${value}`).join(",\n")}
+${this.values.map((value) => `\t${value} = "${value}"`).join(",\n")}
 }`;
 	}
 }

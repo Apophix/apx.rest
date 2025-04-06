@@ -1,7 +1,7 @@
 export abstract class ApiClient {
 	private _baseUrl: string;
 	private _defaultToUseBearerToken = false;
-	private _bearerTokenProvider?: () => string;
+	private _bearerTokenProvider?: () => Promise<string>;
 
 	public constructor(baseUrl: string) {
 		// Add a trailing slash to the baseUrl if there isn't one
@@ -26,20 +26,25 @@ export abstract class ApiClient {
 		"Content-Type": "application/json",
 	};
 
-	public withBearerTokenProvider(provider: () => string): void {
+	public useBearerTokenProvider(provider: () => Promise<string>): void {
 		this._bearerTokenProvider = provider;
 	}
 
-	private buildHeaders(options?: TApiRequestOptions): Record<string, string> {
+	public useBearerTokenByDefault(value: boolean) { 
+		this._defaultToUseBearerToken = value;
+	}
+
+	private async buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>> {
 		const headers = options?.requestHeaders || {};
 		for (const [key, value] of Object.entries(this.basicHeaders)) {
 			headers[key] = value;
 		}
 		if (options?.useBearerToken || this._defaultToUseBearerToken) {
-			const token = this._bearerTokenProvider?.();
+			const token = await this._bearerTokenProvider?.();
 			if (!token) {
 				throw new Error("Bearer token is not provided");
 			}
+
 			headers["Authorization"] = `Bearer ${token}`;
 		}
 
@@ -55,7 +60,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "GET",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		const data = await response.json();
@@ -69,7 +74,7 @@ export abstract class ApiClient {
 		options?: TApiRequestOptions
 	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
-		const headers = this.buildHeaders(options);
+		const headers = await this.buildHeaders(options);
 		const bodyJson = JSON.stringify(body);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
@@ -88,7 +93,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "PUT",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 			body: JSON.stringify(body),
 		});
 
@@ -106,7 +111,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "PATCH",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 			body: JSON.stringify(body),
 		});
 
@@ -120,7 +125,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "DELETE",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		const data = await response.json();
@@ -133,7 +138,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "GET",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		if (!response.body) {
@@ -157,7 +162,7 @@ export abstract class ApiClient {
 		const response = await fetch(url, {
 			method: "POST",
 			body: bodyJson,
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		if (!response.body) {
@@ -181,7 +186,7 @@ export abstract class ApiClient {
 		const response = await fetch(url, {
 			method: "PUT",
 			body: bodyJson,
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		if (!response.body) {
@@ -205,7 +210,7 @@ export abstract class ApiClient {
 		const response = await fetch(url, {
 			method: "PATCH",
 			body: bodyJson,
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		if (!response.body) {
@@ -227,7 +232,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "DELETE",
-			headers: this.buildHeaders(options),
+			headers: await this.buildHeaders(options),
 		});
 
 		if (!response.body) {

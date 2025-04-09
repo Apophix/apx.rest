@@ -39,7 +39,8 @@ export abstract class ApiClient {
 		for (const [key, value] of Object.entries(this.basicHeaders)) {
 			headers[key] = value;
 		}
-		if (options?.useBearerToken || this._defaultToUseBearerToken) {
+
+		if (options?.useBearerToken) {
 			const token = await this._bearerTokenProvider?.();
 			if (!token) {
 				throw new Error("Bearer token is not provided");
@@ -52,7 +53,26 @@ export abstract class ApiClient {
 	}
 
 	private buildRequestOptions(options?: TApiRequestOptions): TApiRequestOptions {
-		return { ...DEFAULT_REQUEST_OPTIONS, ...options };
+		if (!options) 
+			options = {};
+
+		if (options.requestHeaders) {
+			for (const [key, value] of Object.entries(this.basicHeaders)) {
+				if (!options.requestHeaders[key]) {
+					options.requestHeaders[key] = value;
+				}
+			}
+		}
+		if (options.useBearerToken === undefined) {
+			options.useBearerToken = this._defaultToUseBearerToken;
+		}
+		if (options.expectedDataResponseType === undefined) {
+			options.expectedDataResponseType = EExpectedDataResponseType.Json;
+		}
+		if (options.expectedDataResponseType !== EExpectedDataResponseType.Json) {
+			throw new Error("Only Json response type is supported.");
+		}
+		return options;
 	}
 
 	public async get<T>(path: string, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
@@ -74,12 +94,11 @@ export abstract class ApiClient {
 		options?: TApiRequestOptions
 	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
-		const headers = await this.buildHeaders(options);
-		const bodyJson = JSON.stringify(body);
 		options = this.buildRequestOptions(options);
+		const bodyJson = JSON.stringify(body);
 		const response = await fetch(url, {
 			method: "POST",
-			headers: headers,
+			headers: await this.buildHeaders(options),
 			body: bodyJson,
 		});
 

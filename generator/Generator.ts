@@ -241,17 +241,18 @@ export class Generator {
 
 		for (const [endpoint, path] of Object.entries<any>(openApiDocument["paths"])) {
 			for (const [method, operation] of Object.entries<any>(path)) {
+				const requestBodyContents = operation.requestBody?.content as Record<string, any>;
+				const requestInnerContents = Array.from(Object.values(requestBodyContents))[0];
+				const responseContents = operation.responses;
+				const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
+
 				paths.push(
 					new ApiPath({
 						endpoint,
 						method,
 						operationId: operation.operationId,
-						requestComponentName: operation.requestBody?.content?.[
-							"application/json"
-						]?.schema?.$ref
-							?.split("/")
-							.pop(),
-						responseComponentName: operation.responses["200"]?.content?.[
+						requestComponentName: requestInnerContents?.schema?.$ref?.split("/").pop(),
+						responseComponentName: responseInnerContents.content?.[
 							"application/json"
 						]?.schema?.$ref
 							?.split("/")
@@ -348,6 +349,30 @@ class ApiPath implements TApiPathDto {
 		return prefix + this.operationId + suffix;
 	}
 
+	public get pathParams(): string[] {
+		const pathParams = this.endpoint.match(/{\w+}/g);
+		return pathParams ? pathParams.map((param) => param.replaceAll(/[{}]/g, "")) : [];
+	}
+
+	public get builtEndpointUrl(): string {
+		let endpoint = this.endpoint;
+		for (const param of this.pathParams) {
+			endpoint = endpoint.replace(`{${param}}`, `\${request.${param}}`);
+		}
+		return endpoint;
+	}
+
+	public get shouldSkipRequest() : boolean { 
+		return !!(
+			this.requestComponent &&
+			this.requestComponent.properties.every((property) => this.pathParams.includes(property.name))
+		);
+	}
+
+	public get requestStr() : string { 
+		return this.shouldSkipRequest ? (this.method === "get" ? "" : ", {}") : ", request";
+	}
+
 	private renderRequestAndStreamedResponse(
 		requestDtoName: string,
 		responseDtoName: string,
@@ -355,7 +380,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string
 	): string {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): AsyncGenerator<${finalResponse}> {
-		for await (const chunkDto of this.${clientFunctionName}Iterable<${responseDtoName}>(\`${this.endpoint}\`, request, options)) {
+		for await (const chunkDto of this.${clientFunctionName}Iterable<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options)) {
 			if (chunkDto) {
 				yield new ${finalResponse}(chunkDto);
 			}
@@ -371,7 +396,7 @@ class ApiPath implements TApiPathDto {
 	): string {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<${finalResponse}> {
 
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.endpoint}\`, request, options);
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options);
 		if (response.status !== 200) {
 			throw new Error(response.statusText);
 		}
@@ -386,7 +411,7 @@ class ApiPath implements TApiPathDto {
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<boolean> {
-		const { response } = await this.${clientFunctionName}(\`${this.endpoint}\`, request, options);
+		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}\`${this.requestStr}, options);
 
 		return response.ok; 
 	}`;
@@ -394,7 +419,7 @@ class ApiPath implements TApiPathDto {
 
 	private renderResponseOnly(responseDtoName: string, clientFunctionName: string): string {
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${responseDtoName}> {
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.endpoint}\`, options);
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
 
 		if (response.status !== 200) {
 			throw new Error(response.statusText);
@@ -410,7 +435,7 @@ class ApiPath implements TApiPathDto {
 
 	private renderNoRequestNoResponse(clientFunctionName: string): string {
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<boolean> {
-		const { response } = await this.${clientFunctionName}(\`${this.endpoint}\`, options);
+		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}\`, options);
 		
 		return response.ok;
 	}`;
@@ -659,6 +684,10 @@ class Property implements TPropertyDto {
 		return this.type === "string" && this.format === "date-time";
 	}
 
+	public get isNumberType(): boolean {
+		return this.type === "number" || this.type === "integer";
+	}
+
 	public get formattedDtoType(): string | undefined {
 		if (this.referenceComponentName) {
 			if (this.referenceIsEnum) {
@@ -669,6 +698,8 @@ class Property implements TPropertyDto {
 			}
 			return `T${this.referenceComponentName}Dto`;
 		}
+
+		if (this.isNumberType) return "number";
 
 		if (this.isArray) {
 			const arrayProperty = this.items!;
@@ -684,9 +715,10 @@ class Property implements TPropertyDto {
 	}
 
 	public get formattedType(): string | undefined {
-		if (this.isDate) {
-			return "Date";
-		}
+		if (this.isDate) return "Date";
+
+		if (this.isNumberType) return "number";
+
 		if (this.referenceComponentName) {
 			if (this.referenceIsEnum) {
 				return `${this.referenceComponentName}`;

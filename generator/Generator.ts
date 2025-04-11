@@ -11,7 +11,6 @@ function iLog(indentLevel: number, ...args: string[]) {
 	console.log("\t".repeat(indentLevel), ...args);
 }
 
-// NOTE: when implementing multi-api support, we'll put these in each loop and pass it or something. Idk. we can just hack it honestly idrc
 const enumComponents = new Map<string, EnumComponent>();
 const requestComponents = new Map<string, RequestComponent>();
 const responseComponents = new Map<string, ResponseComponent>();
@@ -30,6 +29,12 @@ export class Generator {
 
 		for (let i = 0; i < numConfigs; i++) { 
 			configProvider.apiIndex = i; 
+			enumComponents.clear(); 
+			requestComponents.clear();
+			responseComponents.clear();
+			modelComponents.clear();
+			enumNames.clear();
+			log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
 			await this.generateApi(configProvider);
 		}		
 	}

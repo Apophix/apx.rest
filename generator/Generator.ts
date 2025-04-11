@@ -26,6 +26,15 @@ export class Generator {
 		const configProvider = new ConfigProvider();
 		await configProvider.preload();
 
+		const numConfigs = await configProvider.getNumberOfUserConfigs();
+
+		for (let i = 0; i < numConfigs; i++) { 
+			configProvider.apiIndex = i; 
+			await this.generateApi(configProvider);
+		}		
+	}
+
+	private async generateApi(configProvider: ConfigProvider) : Promise<void> { 
 		log(chalk.blueBright("Fetching OpenAPI document..."));
 
 		// set fetch to ignore self-signed cert

@@ -316,6 +316,18 @@ type TApiPathDto = {
 	isStreamed: boolean;
 };
 
+function stripUrlChars(str: string) : string { 
+	const a = splitAtUrlChars(str);
+	const b = a.map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+	const c = b.join("");
+	return c; 
+}
+
+function splitAtUrlChars(str: string) : string[] { 
+	return str.split(/[^a-zA-Z0-9]/g);
+}
+
+
 class ApiPath implements TApiPathDto {
 	public endpoint: string;
 	public method: string;
@@ -361,7 +373,7 @@ class ApiPath implements TApiPathDto {
 		}
 
 		if (!this.operationId) { 
-			return prefix + this.method + this.endpoint.replace(/\//g, "_") + suffix;
+			return `${prefix}${this.method}${stripUrlChars(this.endpoint)}${suffix}`;
 		}
 
 		return prefix + this.operationId + suffix;

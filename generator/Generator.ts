@@ -104,7 +104,7 @@ export class Generator {
 		const components = openApiDocument["components"]?.["schemas"];
 		if (!components) {
 			log(chalk.red("No components found in OpenAPI document."));
-			return;
+			// return;
 		}
 
 		for (const [schemaName, schema] of Object.entries<any>(components)) {

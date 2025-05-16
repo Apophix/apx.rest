@@ -360,6 +360,10 @@ class ApiPath implements TApiPathDto {
 			return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
 		}
 
+		if (!this.operationId) { 
+			return prefix + this.method + this.endpoint.replace(/\//g, "_") + suffix;
+		}
+
 		return prefix + this.operationId + suffix;
 	}
 

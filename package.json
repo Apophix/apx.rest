@@ -1,28 +1,26 @@
 {
-  "name": "apx.rest",
-  "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc -p .",
-    "start": "node index.js",
-    "apx-generate": "tsx ./bin/codegen.ts",
-    "postinstall": "tsc -t es2022 -m nodenext --moduleResolution nodenext --outDir ./bin codegen.ts "
-  },
-  "bin": {
-    "apx-gen": "./bin/codegen.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@types/node": "^22.13.14",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
-  },
-  "dependencies": {
-    "chalk": "^5.4.1"
-  }
+	"name": "apx.rest",
+	"version": "1.0.0",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc -p .",
+		"start": "node index.js",
+		"apx-generate": "tsx ./bin/codegen.ts",
+		"postinstall": "tsc -t es2022 -m nodenext --moduleResolution nodenext --outDir ./bin codegen.ts "
+	},
+	"bin": {
+		"apx-gen": "./bin/codegen.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"peerDependencies": {
+		"chalk": "^5.4.1",
+		"@types/node": "^22.13.14",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.2"
+	}
 }

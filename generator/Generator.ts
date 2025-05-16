@@ -107,7 +107,7 @@ export class Generator {
 			// return;
 		}
 
-		for (const [schemaName, schema] of Object.entries<any>(components)) {
+		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
 			iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
 
 			if (schema["enum"]) {

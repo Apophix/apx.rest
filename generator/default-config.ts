@@ -1,3 +1,4 @@
 export default { 
-	"outputBaseDirectory": "src/clients"
+	"outputBaseDirectory": "src/clients", 
+	"streamedEndpoints": []
 }

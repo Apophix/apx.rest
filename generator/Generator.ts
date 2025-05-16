@@ -256,10 +256,7 @@ export class Generator {
 		for (const [endpoint, path] of Object.entries<any>(openApiDocument["paths"])) {
 			for (const [method, operation] of Object.entries<any>(path)) {
 				const requestBodyContents = operation.requestBody?.content as Record<string, any>;
-				if (!requestBodyContents) {
-					continue;
-				}
-				const requestInnerContents = Array.from(Object.values(requestBodyContents))[0];
+				const requestInnerContents = requestBodyContents ? Array.from(Object.values(requestBodyContents))[0] : {}; 
 				const responseContents = operation.responses;
 				const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
 

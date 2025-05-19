@@ -360,23 +360,39 @@ class ApiPath implements TApiPathDto {
 		const suffix = this.isStreamed ? "Stream" : "";
 		const prefix = this.isStreamed ? "*" : "";
 
-		if (this.responseComponent) {
-			const lowerCaseComponentName =
-				this.responseComponent.name.charAt(0).toLowerCase() + this.responseComponent.name.slice(1);
-			return prefix + lowerCaseComponentName.replace("Response", "") + suffix;
+		switch (this.method) { 
+			case "get":
+				return `${prefix}get${stripUrlChars(this.endpoint)}${suffix}`;
+			case "post":
+				return `${prefix}create${stripUrlChars(this.endpoint)}${suffix}`;
+			case "put":
+				return `${prefix}replace${stripUrlChars(this.endpoint)}${suffix}`;
+			case "delete":
+				return `${prefix}delete${stripUrlChars(this.endpoint)}${suffix}`;
+			case "patch":
+				return `${prefix}update${stripUrlChars(this.endpoint)}${suffix}`;
+			default:
+				throw new Error(`Unknown method: ${this.method}`);
 		}
 
-		if (this.requestComponent) {
-			const lowerCaseComponentName =
-				this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
-			return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
-		}
 
-		if (!this.operationId) { 
-			return `${prefix}${this.method}${stripUrlChars(this.endpoint)}${suffix}`;
-		}
+		// if (this.responseComponent) {
+		// 	const lowerCaseComponentName =
+		// 		this.responseComponent.name.charAt(0).toLowerCase() + this.responseComponent.name.slice(1);
+		// 	return prefix + lowerCaseComponentName.replace("Response", "") + suffix;
+		// }
 
-		return prefix + this.operationId + suffix;
+		// if (this.requestComponent) {
+		// 	const lowerCaseComponentName =
+		// 		this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
+		// 	return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
+		// }
+
+		// if (!this.operationId) { 
+		// 	return `${prefix}${this.method}${stripUrlChars(this.endpoint)}${suffix}`;
+		// }
+
+		// return prefix + this.operationId + suffix;
 	}
 
 	public get pathParams(): string[] {

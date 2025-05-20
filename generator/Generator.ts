@@ -502,7 +502,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
-		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${responseDtoName}> {
+		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${finalResponse}> {
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
 
 		if (!response.ok) {

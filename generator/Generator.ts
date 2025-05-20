@@ -362,15 +362,15 @@ class ApiPath implements TApiPathDto {
 		const suffix = this.isStreamed ? "Stream" : "";
 		const prefix = this.isStreamed ? "*" : "";
 
-		const resourceName = stripUrlChars(this.endpoint);
-
+		// operation id takes priority since that is directly set with an attribute in C# 
 		if (this.operationId) {
-			let lowerCaseOperationId = this.operationId.charAt(0).toLowerCase() + this.operationId.slice(1);
-
-			lowerCaseOperationId = stripUrlChars(lowerCaseOperationId);
+			let lowerCaseOperationId = stripUrlChars(this.operationId);
+			lowerCaseOperationId = lowerCaseOperationId.charAt(0).toLowerCase() + lowerCaseOperationId.slice(1);
 
 			return prefix + lowerCaseOperationId + suffix;
 		}
+
+		const resourceName = stripUrlChars(this.endpoint);
 
 		switch (this.method) {
 			case "get":

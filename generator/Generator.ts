@@ -437,7 +437,9 @@ class ApiPath implements TApiPathDto {
 	}
 
 	public get requestStr(): string {
-		return this.shouldSkipRequest ? (this.method === "get" ? "" : ", {}") : ", request";
+		if (this.method === "get") return ""; 
+
+		return this.shouldSkipRequest ? ", {}" : ", request";
 	}
 
 	private renderRequestAndStreamedResponse(

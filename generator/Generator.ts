@@ -467,7 +467,7 @@ class ApiPath implements TApiPathDto {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<${finalResponse}> {
 
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options);
-		if (response.status !== 200) {
+		if (!response.ok) {
 			throw new Error(response.statusText);
 		}
 
@@ -488,10 +488,10 @@ class ApiPath implements TApiPathDto {
 	}
 
 	private renderResponseOnly(responseDtoName: string, clientFunctionName: string, finalResponse: string): string {
-		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${finalResponse}> {
+		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${responseDtoName}> {
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
 
-		if (response.status !== 200) {
+		if (!response.ok) {
 			throw new Error(response.statusText);
 		}
 

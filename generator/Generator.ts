@@ -408,6 +408,10 @@ class ApiPath implements TApiPathDto {
 		return pathParams ? pathParams.map((param) => param.replaceAll(/[{}]/g, "")) : [];
 	}
 
+	public get hasPathParams(): boolean {
+		return this.pathParams.length > 0;
+	}
+
 	public get builtEndpointUrl(): string {
 		let endpoint = this.endpoint;
 		for (const param of this.pathParams) {
@@ -501,7 +505,9 @@ class ApiPath implements TApiPathDto {
 		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
 		const clientFunctionName = this.method;
 
-		if (!!this.requestComponent && !!this.responseComponent) {
+		const hasRequest = !!this.requestComponent || this.hasPathParams;
+
+		if (hasRequest && !!this.responseComponent) {
 			if (this.isStreamed) {
 				return this.renderRequestAndStreamedResponse(
 					requestDtoName,
@@ -518,7 +524,7 @@ class ApiPath implements TApiPathDto {
 			);
 		}
 
-		if (!!this.requestComponent) {
+		if (hasRequest) {
 			return this.renderRequestOnly(requestDtoName, clientFunctionName);
 		}
 

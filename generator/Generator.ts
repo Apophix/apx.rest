@@ -27,19 +27,19 @@ export class Generator {
 
 		const numConfigs = await configProvider.getNumberOfUserConfigs();
 
-		for (let i = 0; i < numConfigs; i++) { 
-			configProvider.apiIndex = i; 
-			enumComponents.clear(); 
+		for (let i = 0; i < numConfigs; i++) {
+			configProvider.apiIndex = i;
+			enumComponents.clear();
 			requestComponents.clear();
 			responseComponents.clear();
 			modelComponents.clear();
 			enumNames.clear();
 			log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
 			await this.generateApi(configProvider);
-		}		
+		}
 	}
 
-	private async generateApi(configProvider: ConfigProvider) : Promise<void> { 
+	private async generateApi(configProvider: ConfigProvider): Promise<void> {
 		log(chalk.blueBright("Fetching OpenAPI document..."));
 
 		// set fetch to ignore self-signed cert
@@ -256,7 +256,7 @@ export class Generator {
 		for (const [endpoint, path] of Object.entries<any>(openApiDocument["paths"])) {
 			for (const [method, operation] of Object.entries<any>(path)) {
 				const requestBodyContents = operation.requestBody?.content as Record<string, any>;
-				const requestInnerContents = requestBodyContents ? Array.from(Object.values(requestBodyContents))[0] : {}; 
+				const requestInnerContents = requestBodyContents ? Array.from(Object.values(requestBodyContents))[0] : {};
 				const responseContents = operation.responses;
 				const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
 
@@ -316,14 +316,14 @@ type TApiPathDto = {
 	isStreamed: boolean;
 };
 
-function stripUrlChars(str: string) : string { 
+function stripUrlChars(str: string): string {
 	const a = splitAtUrlChars(str);
 	const b = a.map((s) => s.charAt(0).toUpperCase() + s.slice(1));
 	const c = b.join("");
-	return c; 
+	return c;
 }
 
-function splitAtUrlChars(str: string) : string[] { 
+function splitAtUrlChars(str: string): string[] {
 	return str.split(/[^a-zA-Z0-9]/g);
 }
 
@@ -360,39 +360,47 @@ class ApiPath implements TApiPathDto {
 		const suffix = this.isStreamed ? "Stream" : "";
 		const prefix = this.isStreamed ? "*" : "";
 
-		switch (this.method) { 
+		const resourceName = stripUrlChars(this.endpoint);
+
+		switch (this.method) {
 			case "get":
-				return `${prefix}get${stripUrlChars(this.endpoint)}${suffix}`;
+				if (this.responseComponent) {
+					const lowerCaseComponentName =
+						this.responseComponent.name.charAt(0).toLowerCase() + this.responseComponent.name.slice(1);
+					return prefix + lowerCaseComponentName.replace("Response", "") + suffix;
+				}
+				return `${prefix}get${resourceName}${suffix}`;
 			case "post":
-				return `${prefix}create${stripUrlChars(this.endpoint)}${suffix}`;
+				if (this.requestComponent) {
+					const lowerCaseComponentName =
+						this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
+					return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
+				}
+				return `${prefix}create${resourceName}${suffix}`;
 			case "put":
-				return `${prefix}replace${stripUrlChars(this.endpoint)}${suffix}`;
+				if (this.requestComponent) {
+					const lowerCaseComponentName =
+						this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
+					return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
+				}
+				return `${prefix}replace${resourceName}${suffix}`;
 			case "delete":
-				return `${prefix}delete${stripUrlChars(this.endpoint)}${suffix}`;
+				if (this.requestComponent) {
+					const lowerCaseComponentName =
+						this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
+					return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
+				}
+				return `${prefix}delete${resourceName}${suffix}`;
 			case "patch":
-				return `${prefix}update${stripUrlChars(this.endpoint)}${suffix}`;
+				if (this.requestComponent) {
+					const lowerCaseComponentName =
+						this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
+					return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
+				}
+				return `${prefix}update${resourceName}${suffix}`;
 			default:
 				throw new Error(`Unknown method: ${this.method}`);
 		}
-
-
-		// if (this.responseComponent) {
-		// 	const lowerCaseComponentName =
-		// 		this.responseComponent.name.charAt(0).toLowerCase() + this.responseComponent.name.slice(1);
-		// 	return prefix + lowerCaseComponentName.replace("Response", "") + suffix;
-		// }
-
-		// if (this.requestComponent) {
-		// 	const lowerCaseComponentName =
-		// 		this.requestComponent.name.charAt(0).toLowerCase() + this.requestComponent.name.slice(1);
-		// 	return prefix + lowerCaseComponentName.replace("Request", "") + suffix;
-		// }
-
-		// if (!this.operationId) { 
-		// 	return `${prefix}${this.method}${stripUrlChars(this.endpoint)}${suffix}`;
-		// }
-
-		// return prefix + this.operationId + suffix;
 	}
 
 	public get pathParams(): string[] {
@@ -408,14 +416,14 @@ class ApiPath implements TApiPathDto {
 		return endpoint;
 	}
 
-	public get shouldSkipRequest() : boolean { 
+	public get shouldSkipRequest(): boolean {
 		return !!(
 			this.requestComponent &&
 			this.requestComponent.properties.every((property) => this.pathParams.includes(property.name))
 		);
 	}
 
-	public get requestStr() : string { 
+	public get requestStr(): string {
 		return this.shouldSkipRequest ? (this.method === "get" ? "" : ", {}") : ", request";
 	}
 
@@ -611,21 +619,19 @@ class Component implements TComponentDto {
 			}
 			if (property.isArray) {
 				if (property.items?.referenceComponentName) {
-					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${
-						property.items!.referenceComponentName
-					}(item));`;
+					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName
+						}(item));`;
 					continue;
 				}
 			}
 
 			if (property.isDictionary) {
 				if (property.additionalProperties?.isArray) {
-					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
-						property.name
-					}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-						"[]",
-						""
-					)}(item))]));`;
+					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
+						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+							"[]",
+							""
+						)}(item))]));`;
 					continue;
 				}
 				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
@@ -659,7 +665,7 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component {}
+class ModelComponent extends Component { }
 
 class RequestComponent extends Component {
 	public override render(): string {
@@ -676,7 +682,7 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component {}
+class ResponseComponent extends Component { }
 
 type TPropertyDto = {
 	name: string;

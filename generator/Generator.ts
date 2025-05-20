@@ -486,7 +486,7 @@ class ApiPath implements TApiPathDto {
 	}`;
 	}
 
-	private renderResponseOnly(responseDtoName: string, clientFunctionName: string): string {
+	private renderResponseOnly(responseDtoName: string, clientFunctionName: string, finalResponse: string): string {
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${responseDtoName}> {
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
 
@@ -498,7 +498,7 @@ class ApiPath implements TApiPathDto {
 			throw new Error('No data returned from server');
 		}
 
-		return new ${responseDtoName}(data);
+		return new ${finalResponse}(data);
 	}`;
 	}
 
@@ -540,7 +540,7 @@ class ApiPath implements TApiPathDto {
 		}
 
 		if (!!this.responseComponent) {
-			return this.renderResponseOnly(responseDtoName, clientFunctionName);
+			return this.renderResponseOnly(responseDtoName, clientFunctionName, finalResponse);
 		}
 
 		return this.renderNoRequestNoResponse(clientFunctionName);

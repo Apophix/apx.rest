@@ -364,6 +364,14 @@ class ApiPath implements TApiPathDto {
 
 		const resourceName = stripUrlChars(this.endpoint);
 
+		if (this.operationId) {
+			let lowerCaseOperationId = this.operationId.charAt(0).toLowerCase() + this.operationId.slice(1);
+
+			lowerCaseOperationId = stripUrlChars(lowerCaseOperationId);
+
+			return prefix + lowerCaseOperationId + suffix;
+		}
+
 		switch (this.method) {
 			case "get":
 				if (this.responseComponent) {
@@ -440,7 +448,7 @@ class ApiPath implements TApiPathDto {
 	public get requestStr(): string {
 		if (this.method === "get") return "";
 
-		if (!this.requestComponent) return ""; 
+		if (!this.requestComponent) return "";
 
 		return this.shouldSkipRequest ? ", {}" : ", request";
 	}
@@ -489,7 +497,11 @@ class ApiPath implements TApiPathDto {
 	}`;
 	}
 
-	private renderResponseOnly(responseDtoName: string, clientFunctionName: string, finalResponse: string): string {
+	private renderResponseOnly(
+		responseDtoName: string,
+		clientFunctionName: string,
+		finalResponse: string
+	): string {
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${responseDtoName}> {
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
 
@@ -522,8 +534,7 @@ class ApiPath implements TApiPathDto {
 		const hasRequest = !!this.requestComponent || this.hasPathParams;
 
 		if (this.hasPathParams) {
-			const pathParamType = `{ ${this.pathParams
-				.map((param) => `${param}: string`).join(", ")} }`;
+			const pathParamType = `{ ${this.pathParams.map((param) => `${param}: string`).join(", ")} }`;
 			if (requestDtoName === "any") {
 				requestDtoName = pathParamType;
 			} else {
@@ -649,19 +660,21 @@ class Component implements TComponentDto {
 			}
 			if (property.isArray) {
 				if (property.items?.referenceComponentName) {
-					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName
-						}(item));`;
+					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${
+						property.items!.referenceComponentName
+					}(item));`;
 					continue;
 				}
 			}
 
 			if (property.isDictionary) {
 				if (property.additionalProperties?.isArray) {
-					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
-						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-							"[]",
-							""
-						)}(item))]));`;
+					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
+						property.name
+					}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+						"[]",
+						""
+					)}(item))]));`;
 					continue;
 				}
 				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
@@ -695,7 +708,7 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component { }
+class ModelComponent extends Component {}
 
 class RequestComponent extends Component {
 	public override render(): string {
@@ -712,7 +725,7 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component { }
+class ResponseComponent extends Component {}
 
 type TPropertyDto = {
 	name: string;

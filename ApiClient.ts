@@ -23,9 +23,10 @@ export abstract class ApiClient {
 	}
 
 	protected basicHeaders: Record<string, string> = {
-		"Content-Type": "application/json",
+		
 	};
 
+	
 	public useBearerTokenProvider(provider: () => Promise<string>): void {
 		this._bearerTokenProvider = provider;
 	}
@@ -99,9 +100,13 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const bodyJson = JSON.stringify(body);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "POST",
-			headers: await this.buildHeaders(options),
+			headers,
 			body: bodyJson,
 		});
 
@@ -117,9 +122,13 @@ export abstract class ApiClient {
 	public async put<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "PUT",
-			headers: await this.buildHeaders(options),
+			headers,
 			body: JSON.stringify(body),
 		});
 
@@ -139,9 +148,13 @@ export abstract class ApiClient {
 	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "PATCH",
-			headers: await this.buildHeaders(options),
+			headers,
 			body: JSON.stringify(body),
 		});
 
@@ -157,9 +170,13 @@ export abstract class ApiClient {
 	public async delete<T>(path: string, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "DELETE",
-			headers: await this.buildHeaders(options),
+			headers,
 		});
 
 		const data = await response.json();
@@ -197,10 +214,14 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const bodyJson = JSON.stringify(body);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "POST",
 			body: bodyJson,
-			headers: await this.buildHeaders(options),
+			headers,
 		});
 
 		if (!response.body) {
@@ -225,10 +246,14 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const bodyJson = JSON.stringify(body);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "PUT",
 			body: bodyJson,
-			headers: await this.buildHeaders(options),
+			headers,
 		});
 
 		if (!response.ok) {
@@ -253,10 +278,14 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const bodyJson = JSON.stringify(body);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "PATCH",
 			body: bodyJson,
-			headers: await this.buildHeaders(options),
+			headers,
 		});
 
 		if (!response.ok) {
@@ -280,9 +309,13 @@ export abstract class ApiClient {
 	public async *deleteRawIterable(path: string, options?: TApiRequestOptions) {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		if (!headers["Content-Type"]) {
+			headers["Content-Type"] = "application/json";
+		}
 		const response = await fetch(url, {
 			method: "DELETE",
-			headers: await this.buildHeaders(options),
+			headers,
 		});
 
 		if (!response.ok) {

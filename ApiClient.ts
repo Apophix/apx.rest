@@ -30,7 +30,7 @@ export abstract class ApiClient {
 		this._bearerTokenProvider = provider;
 	}
 
-	public useBearerTokenByDefault(value: boolean) { 
+	public useBearerTokenByDefault(value: boolean) {
 		this._defaultToUseBearerToken = value;
 	}
 
@@ -53,8 +53,7 @@ export abstract class ApiClient {
 	}
 
 	private buildRequestOptions(options?: TApiRequestOptions): TApiRequestOptions {
-		if (!options) 
-			options = {};
+		if (!options) options = {};
 
 		if (options.requestHeaders) {
 			for (const [key, value] of Object.entries(this.basicHeaders)) {
@@ -83,6 +82,10 @@ export abstract class ApiClient {
 			headers: await this.buildHeaders(options),
 		});
 
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
 		const data = await response.json();
 
 		return { data, response };
@@ -102,6 +105,10 @@ export abstract class ApiClient {
 			body: bodyJson,
 		});
 
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
 		const data = await response.json();
 
 		return { data, response };
@@ -115,6 +122,10 @@ export abstract class ApiClient {
 			headers: await this.buildHeaders(options),
 			body: JSON.stringify(body),
 		});
+
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
 
 		const data = await response.json();
 
@@ -134,6 +145,10 @@ export abstract class ApiClient {
 			body: JSON.stringify(body),
 		});
 
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
 		const data = await response.json();
 
 		return { data, response };
@@ -152,13 +167,17 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
-	public async *getRawIterable(path: string, options?: TApiRequestOptions) { 
+	public async *getRawIterable(path: string, options?: TApiRequestOptions) {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const response = await fetch(url, {
 			method: "GET",
 			headers: await this.buildHeaders(options),
 		});
+
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
 
 		if (!response.body) {
 			throw new Error("Response body is null");
@@ -188,6 +207,10 @@ export abstract class ApiClient {
 			throw new Error("Response body is null");
 		}
 
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
 		const reader = response.body.getReader();
 		while (true) {
 			const { done, value } = await reader.read();
@@ -207,6 +230,10 @@ export abstract class ApiClient {
 			body: bodyJson,
 			headers: await this.buildHeaders(options),
 		});
+
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
 
 		if (!response.body) {
 			throw new Error("Response body is null");
@@ -232,6 +259,10 @@ export abstract class ApiClient {
 			headers: await this.buildHeaders(options),
 		});
 
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
 		if (!response.body) {
 			throw new Error("Response body is null");
 		}
@@ -253,6 +284,10 @@ export abstract class ApiClient {
 			method: "DELETE",
 			headers: await this.buildHeaders(options),
 		});
+
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
 
 		if (!response.body) {
 			throw new Error("Response body is null");
@@ -297,25 +332,37 @@ export abstract class ApiClient {
 		return data;
 	}
 
-	public async *getIterable<T>(path: string, options?: TApiRequestOptions) : AsyncGenerator<T> { 
+	public async *getIterable<T>(path: string, options?: TApiRequestOptions): AsyncGenerator<T> {
 		for await (const chunk of this.getRawIterable(path, options)) {
 			yield this.handleResponseChunk<T>(chunk);
 		}
 	}
 
-	public async *postIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+	public async *postIterable<T>(
+		path: string,
+		body: unknown,
+		options?: TApiRequestOptions
+	): AsyncGenerator<T> {
 		for await (const chunk of this.postRawIterable(path, body, options)) {
 			yield this.handleResponseChunk<T>(chunk);
 		}
 	}
 
-	public async *putIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+	public async *putIterable<T>(
+		path: string,
+		body: unknown,
+		options?: TApiRequestOptions
+	): AsyncGenerator<T> {
 		for await (const chunk of this.putRawIterable(path, body, options)) {
 			yield this.handleResponseChunk<T>(chunk);
 		}
 	}
 
-	public async *patchIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T> {
+	public async *patchIterable<T>(
+		path: string,
+		body: unknown,
+		options?: TApiRequestOptions
+	): AsyncGenerator<T> {
 		for await (const chunk of this.patchRawIterable(path, body, options)) {
 			yield this.handleResponseChunk<T>(chunk);
 		}

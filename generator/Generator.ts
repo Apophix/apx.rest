@@ -82,10 +82,7 @@ export class Generator {
 				}
 
 				const requestBody = operation["requestBody"];
-				iLog(1, chalk.cyanBright(`Parsing request body in endpoint ${method.toUpperCase()} ${endpoint}`));
-				iLog(2, chalk.cyan.dim(requestBody));
 				if (!requestBody) { 
-					iLog(2, chalk.cyan.dim("No request body found, skipping..."));
 					continue;
 				}
 				
@@ -97,9 +94,9 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
-					// const schemaName = schemaRef.split("/").pop();
-					// iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
-					// requestNames.add(schemaName);
+					const schemaName = schemaRef.split("/").pop();
+					iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+					requestNames.add(schemaName);
 				}
 			}
 		}
@@ -112,6 +109,14 @@ export class Generator {
 			// return;
 		}
 
+		log(chalk.blue("Scanning for enums...")); 
+		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
+			if (schema["enum"]) {
+				iLog(1, chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`));
+				enumNames.add(schemaName);
+			}
+		}
+
 		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
 			iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
 
@@ -121,7 +126,6 @@ export class Generator {
 					schemaName,
 					new EnumComponent({ name: schemaName, values: schema["enum"] })
 				);
-				enumNames.add(schemaName);
 				continue;
 			}
 

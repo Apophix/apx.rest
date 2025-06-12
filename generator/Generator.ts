@@ -82,21 +82,24 @@ export class Generator {
 				}
 
 				const requestBody = operation["requestBody"];
-				iLog(1, chalk.cyanBright(`Parsing request body in endpoint ${endpoint}`));
+				iLog(1, chalk.cyanBright(`Parsing request body in endpoint ${method.toUpperCase()} ${endpoint}`));
 				iLog(2, chalk.cyan.dim(requestBody));
-				if (!!requestBody) {
-					const contents = requestBody["content"];
-					for (const [contentType, content] of Object.entries<any>(contents)) {
-						const schema = content["schema"];
-						if (!schema) {
-							continue;
-						}
-
-						const schemaRef = content["schema"]["$ref"];
-						const schemaName = schemaRef.split("/").pop();
-						iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
-						requestNames.add(schemaName);
+				if (!requestBody) { 
+					iLog(2, chalk.cyan.dim("No request body found, skipping..."));
+					continue;
+				}
+				
+				const contents = requestBody["content"];
+				for (const [contentType, content] of Object.entries<any>(contents)) {
+					const schema = content["schema"];
+					if (!schema) {
+						continue;
 					}
+
+					const schemaRef = content["schema"]["$ref"];
+					const schemaName = schemaRef.split("/").pop();
+					iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+					requestNames.add(schemaName);
 				}
 			}
 		}

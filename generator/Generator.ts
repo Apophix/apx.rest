@@ -82,7 +82,7 @@ export class Generator {
 				}
 
 				const requestBody = operation["requestBody"];
-				if (requestBody) {
+				if (!!requestBody) {
 					const contents = requestBody["content"];
 					for (const [contentType, content] of Object.entries<any>(contents)) {
 						const schema = content["schema"];

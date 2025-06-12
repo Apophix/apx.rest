@@ -811,7 +811,7 @@ class Property implements TPropertyDto {
 		if (this.isArray) {
 			const arrayProperty = this.items!;
 			if (arrayProperty.referenceComponentName) return `T${arrayProperty.referenceComponentName}Dto[]`;
-			return `${arrayProperty.type}[]`;
+			return `${arrayProperty.formattedType}[]`;
 		}
 
 		if (this.isDictionary) {

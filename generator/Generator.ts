@@ -75,9 +75,7 @@ export class Generator {
 						}
 
 						const schemaRef = content["schema"]["$ref"];
-
 						if (!schemaRef) continue; 
-						
 						const schemaName = schemaRef.split("/").pop();
 						iLog(1, chalk.cyanBright(`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
 						responseNames.add(schemaName);
@@ -97,6 +95,8 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
+
+					if (!schemaRef) continue;
 					const schemaName = schemaRef.split("/").pop();
 					iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
 					requestNames.add(schemaName);

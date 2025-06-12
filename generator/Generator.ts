@@ -82,6 +82,8 @@ export class Generator {
 				}
 
 				const requestBody = operation["requestBody"];
+				iLog(1, chalk.cyanBright(`Parsing request body in endpoint ${endpoint}`));
+				iLog(2, chalk.cyan.dim(requestBody));
 				if (!!requestBody) {
 					const contents = requestBody["content"];
 					for (const [contentType, content] of Object.entries<any>(contents)) {

@@ -1,3 +1,8 @@
+export enum HeaderType { 
+	Transient, 
+	Persistent
+}
+
 export abstract class ApiClient {
 	private _baseUrl: string;
 	private _defaultToUseBearerToken = false;
@@ -26,6 +31,10 @@ export abstract class ApiClient {
 		
 	};
 
+	protected transientHeaders: Record<string, string> = {}; 
+
+	protected persistentHeaders: Record<string, string> = {};
+
 	
 	public useBearerTokenProvider(provider: () => Promise<string>): void {
 		this._bearerTokenProvider = provider;
@@ -34,6 +43,16 @@ export abstract class ApiClient {
 	public useBearerTokenByDefault(value: boolean) {
 		this._defaultToUseBearerToken = value;
 	}
+
+	public setHeader(key: string, value: string, headerType: HeaderType = HeaderType.Transient): void {
+		if (headerType === HeaderType.Transient) {
+			this.transientHeaders[key] = value;
+		} else if (headerType === HeaderType.Persistent) {
+			this.persistentHeaders[key] = value;
+		} else {
+			throw new Error("Invalid header type");
+		}
+	} 
 
 	private async buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>> {
 		const headers = options?.requestHeaders || {};
@@ -49,6 +68,21 @@ export abstract class ApiClient {
 
 			headers["Authorization"] = `Bearer ${token}`;
 		}
+
+		for (const [key, value] of Object.entries(this.transientHeaders)) {
+			if (!headers[key]) {
+				headers[key] = value;
+			}
+		}
+
+		for (const [key, value] of Object.entries(this.persistentHeaders)) {
+			if (!headers[key]) {
+				headers[key] = value;
+			}
+		}
+
+		// reset transient headers after building the request
+		this.transientHeaders = {};
 
 		return headers;
 	}

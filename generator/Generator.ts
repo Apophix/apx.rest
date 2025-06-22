@@ -681,13 +681,21 @@ class Component implements TComponentDto {
 
 			if (property.isDictionary) {
 				if (property.additionalProperties?.isArray) {
-					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
-						property.name
-					}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-						"[]",
-						""
-					)}(item))]));`;
-					continue;
+					if (property.additionalProperties.referenceComponentName && !property.additionalProperties.referenceIsEnum) {
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
+							property.name
+						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+							"[]",
+							""
+						)}(item))]));`;
+						continue;
+					} else { 
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
+							property.name
+						}).map(([key, value]) => [key, value.map((item) => item)]));`;
+						continue;
+
+					} 
 				}
 				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
 				continue;
@@ -796,6 +804,10 @@ class Property implements TPropertyDto {
 	}
 
 	public get formattedDtoType(): string | undefined {
+		if (this.referenceIsEnum) { 
+			return `${this.referenceComponentName}`;
+		}
+
 		if (this.referenceComponentName) {
 			if (this.referenceIsEnum) {
 				return `${this.referenceComponentName}`;
@@ -825,6 +837,10 @@ class Property implements TPropertyDto {
 		if (this.isDate) return "Date";
 
 		if (this.isNumberType) return "number";
+
+		if (this.referenceIsEnum) { 
+			return `${this.referenceComponentName}`;
+		}
 
 		if (this.referenceComponentName) {
 			if (this.referenceIsEnum) {

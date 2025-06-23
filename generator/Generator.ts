@@ -520,9 +520,6 @@ class ApiPath implements TApiPathDto {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
-					if (param.schema.format === "date-time") {
-						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
-					}
 					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
 				})
 				.join("\n\t\t")}
@@ -544,9 +541,6 @@ class ApiPath implements TApiPathDto {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
-					if (param.schema.format === "date-time") {
-						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
-					}
 					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
 				})
 				.join("\n\t\t")}
@@ -565,9 +559,6 @@ class ApiPath implements TApiPathDto {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
-					if (param.schema.format === "date-time") {
-						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
-					}
 					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
 				})
 				.join("\n\t\t")}
@@ -615,7 +606,7 @@ class ApiPath implements TApiPathDto {
 			const queryParamsType = `{ ${this.queryParams.map(param => {
 				let paramType = param.schema.type;
 				if (param.schema.format === "date-time") {
-					paramType = "Date";
+					paramType = "string";
 				} else if (param.schema.type === "array") {
 					paramType = `${param.schema.items?.type}[]`;
 				}

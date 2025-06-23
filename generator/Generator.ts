@@ -75,7 +75,7 @@ export class Generator {
 						}
 
 						const schemaRef = content["schema"]["$ref"];
-						if (!schemaRef) continue; 
+						if (!schemaRef) continue;
 						const schemaName = schemaRef.split("/").pop();
 						iLog(1, chalk.cyanBright(`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
 						responseNames.add(schemaName);
@@ -83,10 +83,10 @@ export class Generator {
 				}
 
 				const requestBody = operation["requestBody"];
-				if (!requestBody) { 
+				if (!requestBody) {
 					continue;
 				}
-				
+
 				const contents = requestBody["content"];
 				for (const [contentType, content] of Object.entries<any>(contents)) {
 					const schema = content["schema"];
@@ -112,7 +112,7 @@ export class Generator {
 			// return;
 		}
 
-		log(chalk.blue("Scanning for enums...")); 
+		log(chalk.blue("Scanning for enums..."));
 		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
 			if (schema["enum"]) {
 				iLog(1, chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`));
@@ -275,10 +275,12 @@ export class Generator {
 				const responseContents = operation.responses;
 				const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
 
+				// TODO: add query parameters here
 				paths.push(
 					new ApiPath({
 						endpoint,
 						method,
+						parameters: operation.parameters,
 						operationId: operation.operationId,
 						requestComponentName: requestInnerContents?.schema?.$ref?.split("/").pop(),
 						responseComponentName: responseInnerContents.content?.[
@@ -329,6 +331,7 @@ type TApiPathDto = {
 	requestComponentName: string;
 	responseComponentName: string;
 	isStreamed: boolean;
+	parameters?: TApiParameter[];
 };
 
 function stripUrlChars(str: string): string {
@@ -342,6 +345,17 @@ function splitAtUrlChars(str: string): string[] {
 	return str.split(/[^a-zA-Z0-9]/g);
 }
 
+type TApiParameter = {
+	in: string;
+	name: string;
+	required: boolean;
+	schema: {
+		items: any;
+		type: string;
+		format?: string;
+	}
+}
+
 class ApiPath implements TApiPathDto {
 	public endpoint: string;
 	public method: string;
@@ -349,6 +363,7 @@ class ApiPath implements TApiPathDto {
 	public requestComponentName: string;
 	public responseComponentName: string;
 	public isStreamed: boolean;
+	public parameters: TApiParameter[] = [];
 
 	public constructor(dto: TApiPathDto) {
 		this.endpoint = dto.endpoint;
@@ -360,6 +375,21 @@ class ApiPath implements TApiPathDto {
 		this.requestComponentName = dto.requestComponentName;
 		this.responseComponentName = dto.responseComponentName;
 		this.isStreamed = dto.isStreamed;
+
+		this.parameters = dto.parameters || [];
+	}
+
+	public get hasParameters(): boolean {
+		return this.parameters.length > 0;
+	}
+
+	public get queryParams(): TApiParameter[] {
+		return this.parameters
+			.filter((param) => param.in === "query");
+	}
+
+	public get hasQueryParams(): boolean {
+		return this.queryParams.length > 0;
 	}
 
 	public get requestComponent(): RequestComponent | undefined {
@@ -487,8 +517,16 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string
 	): string {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<${finalResponse}> {
-
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options);
+		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
+		${this.queryParams
+				.map(param => {
+					if (param.schema.format === "date-time") {
+						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
+					}
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
 		if (!response.ok) {
 			throw new Error(response.statusText);
 		}
@@ -498,15 +536,24 @@ class ApiPath implements TApiPathDto {
 		}
 
 		return new ${finalResponse}(data);
-	}`;
+	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines;
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<boolean> {
-		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}\`${this.requestStr}, options);
+		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
+		${this.queryParams
+				.map(param => {
+					if (param.schema.format === "date-time") {
+						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
+					}
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
 
 		return response.ok; 
-	}`;
+	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
 	}
 
 	private renderResponseOnly(
@@ -515,7 +562,16 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string
 	): string {
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${finalResponse}> {
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}\`, options);
+		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
+		${this.queryParams
+				.map(param => {
+					if (param.schema.format === "date-time") {
+						return `queryParams.set("${param.name}", request.${param.name}?.toISOString() ?? "");`;
+					}
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, options);
 
 		if (!response.ok) {
 			throw new Error(response.statusText);
@@ -526,7 +582,7 @@ class ApiPath implements TApiPathDto {
 		}
 
 		return new ${finalResponse}(data);
-	}`;
+	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
 	}
 
 	private renderNoRequestNoResponse(clientFunctionName: string): string {
@@ -543,7 +599,7 @@ class ApiPath implements TApiPathDto {
 		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
 		const clientFunctionName = this.method;
 
-		const hasRequest = !!this.requestComponent || this.hasPathParams;
+		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;
 
 		if (this.hasPathParams) {
 			const pathParamType = `{ ${this.pathParams.map((param) => `${param}: string`).join(", ")} }`;
@@ -551,6 +607,24 @@ class ApiPath implements TApiPathDto {
 				requestDtoName = pathParamType;
 			} else {
 				requestDtoName = `${pathParamType} & ${requestDtoName}`;
+			}
+		}
+
+		if (this.hasQueryParams) {
+
+			const queryParamsType = `{ ${this.queryParams.map(param => {
+				let paramType = param.schema.type;
+				if (param.schema.format === "date-time") {
+					paramType = "Date";
+				} else if (param.schema.type === "array") {
+					paramType = `${param.schema.items?.type}[]`;
+				}
+				return `${param.name}: ${paramType}`;
+			}).join(", ")} }`;
+			if (requestDtoName === "any") {
+				requestDtoName = queryParamsType;
+			} else {
+				requestDtoName = `${queryParamsType} & ${requestDtoName}`;
 			}
 		}
 
@@ -672,9 +746,8 @@ class Component implements TComponentDto {
 			}
 			if (property.isArray) {
 				if (property.items?.referenceComponentName) {
-					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${
-						property.items!.referenceComponentName
-					}(item));`;
+					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName
+						}(item));`;
 					continue;
 				}
 			}
@@ -682,20 +755,18 @@ class Component implements TComponentDto {
 			if (property.isDictionary) {
 				if (property.additionalProperties?.isArray) {
 					if (property.additionalProperties.referenceComponentName && !property.additionalProperties.referenceIsEnum) {
-						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
-							property.name
-						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-							"[]",
-							""
-						)}(item))]));`;
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
+							}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+								"[]",
+								""
+							)}(item))]));`;
 						continue;
-					} else { 
-						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
-							property.name
-						}).map(([key, value]) => [key, value.map((item) => item)]));`;
+					} else {
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
+							}).map(([key, value]) => [key, value.map((item) => item)]));`;
 						continue;
 
-					} 
+					}
 				}
 				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
 				continue;
@@ -728,7 +799,7 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component {}
+class ModelComponent extends Component { }
 
 class RequestComponent extends Component {
 	public override render(): string {
@@ -745,7 +816,7 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component {}
+class ResponseComponent extends Component { }
 
 type TPropertyDto = {
 	name: string;
@@ -804,7 +875,7 @@ class Property implements TPropertyDto {
 	}
 
 	public get formattedDtoType(): string | undefined {
-		if (this.referenceIsEnum) { 
+		if (this.referenceIsEnum) {
 			return `${this.referenceComponentName}`;
 		}
 
@@ -838,7 +909,7 @@ class Property implements TPropertyDto {
 
 		if (this.isNumberType) return "number";
 
-		if (this.referenceIsEnum) { 
+		if (this.referenceIsEnum) {
 			return `${this.referenceComponentName}`;
 		}
 

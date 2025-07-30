@@ -127,7 +127,7 @@ export class Generator {
 				iLog(2, chalk.cyanBright.dim("Processing as enum"));
 				enumComponents.set(
 					schemaName,
-					new EnumComponent({ name: schemaName, values: schema["enum"], enumNames: schema["x-enumNames"] })
+					new EnumComponent({ name: schemaName, values: schema["enum"], enumNames: schema["x-enumNames"], type: schema["type"] || "string"})
 				);
 				continue;
 			}
@@ -651,6 +651,7 @@ class ApiPath implements TApiPathDto {
 type TEnumComponent = {
 	name: string;
 	values: string[];
+	type: string; 
 	enumNames?: string[]; 
 };
 
@@ -658,11 +659,13 @@ class EnumComponent implements TEnumComponent {
 	public name: string;
 	public values: string[];
 	public enumNames?: string[]; 
+	public type: string; 
 
 	public constructor(dto: TEnumComponent) {
 		this.name = dto.name;
 		this.values = dto.values;
 		this.enumNames = dto.enumNames;
+		this.type = dto.type; 
 	}
 
 	public get capitalizedName(): string {
@@ -673,9 +676,16 @@ class EnumComponent implements TEnumComponent {
 		return this.enumNames?.[index] ?? this.values[index];
 	}
 
+	private formatValue(value: string): string { 
+		if (this.type === "integer" || this.type === "number" || this.type === "int32" || this.type === "int64") {
+			return value;
+		}
+		return `"${value}"`;
+	}
+
 	public render(): string {
 		return `export enum ${this.capitalizedName} {
-${this.values.map((value, index) => `\t${this.getEnumName(index)} = "${value}"`).join(",\n")}
+${this.values.map((value, index) => `\t${this.getEnumName(index)} = ${this.formatValue(value)}`).join(",\n")}
 }`;
 	}
 }

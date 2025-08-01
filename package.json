@@ -17,7 +17,6 @@
 		"codegen.ts",
 		"generator/",
 		"dist/",
-		"*.d.ts",
 		"README.md"
 	],
 	"keywords": ["codegen", "typescript", "api", "rest"],

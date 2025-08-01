@@ -883,13 +883,14 @@ class Property implements TPropertyDto {
 	}
 
 	public get formattedDtoType(): string | undefined {
+		if (this.isArray && this.items?.referenceIsEnum) { 
+			return `${this.referenceComponentName}[]`;
+		}
+
 		if (this.referenceIsEnum) {
 			return `${this.referenceComponentName}`;
 		}
 
-		if (this.referenceComponentName && this.isArray && this.items?.referenceIsEnum) { 
-			return `${this.referenceComponentName}[]`;
-		}
 
 		if (this.referenceComponentName) {
 			if (this.referenceIsEnum) {

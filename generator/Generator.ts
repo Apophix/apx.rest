@@ -921,6 +921,10 @@ class Property implements TPropertyDto {
 
 		if (this.isNumberType) return "number";
 
+		if (this.isArray && this.referenceIsEnum) { 
+			return `${this.items?.referenceComponentName ?? "???"}[]`;
+		}
+
 		if (this.referenceIsEnum) {
 			return `${this.referenceComponentName}`;
 		}

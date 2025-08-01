@@ -20,7 +20,8 @@
 		"codegen.ts",
 		"generator/",
 		"dist/",
-		"README.md"
+		"README.md", 
+		"**/*"
 	],
 	"keywords": ["codegen", "typescript", "api", "rest"],
 	"author": "Apophix",

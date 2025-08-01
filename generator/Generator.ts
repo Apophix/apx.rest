@@ -611,6 +611,8 @@ class ApiPath implements TApiPathDto {
 				} else if (param.schema.type === "integer")  {
 					paramType = "number";
 				}
+				if (!param.required)
+					return `${param.name}?: ${paramType}`;
 				return `${param.name}: ${paramType}`;
 			}).join(", ")} }`;
 			if (requestDtoName === "any") {

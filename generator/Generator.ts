@@ -148,7 +148,7 @@ export class Generator {
 										nullable = false;
 									}
 								}
-								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop());
+								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 								return new Property({
 									name: propertyName,
 									type: property["type"],
@@ -181,7 +181,7 @@ export class Generator {
 										nullable = false;
 									}
 								}
-								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop());
+								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 								return new Property({
 									name: propertyName,
 									type: property["type"],
@@ -214,7 +214,7 @@ export class Generator {
 								nullable = false;
 							}
 						}
-						const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop());
+						const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 						return new Property({
 							name: propertyName,
 							type: property["type"],

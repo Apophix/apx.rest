@@ -602,13 +602,14 @@ class ApiPath implements TApiPathDto {
 		}
 
 		if (this.hasQueryParams) {
-
 			const queryParamsType = `{ ${this.queryParams.map(param => {
 				let paramType = param.schema.type;
 				if (param.schema.format === "date-time") {
 					paramType = "string";
 				} else if (param.schema.type === "array") {
 					paramType = `${param.schema.items?.type}[]`;
+				} else if (param.schema.type === "integer")  {
+					paramType = "number";
 				}
 				return `${param.name}: ${paramType}`;
 			}).join(", ")} }`;
@@ -780,7 +781,7 @@ class Component implements TComponentDto {
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
 				else 
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value]));`;
-				
+
 				continue;
 			}
 			str += `\n\t\tthis.${property.name} = dto.${property.name};`;

@@ -239,8 +239,7 @@ export class Generator {
 		outputStr += `// This file is generated from the OpenAPI document at ${documentUrl}\n\n`;
 		outputStr += `// File will be overwritten!!\n\n`;
 
-		outputStr += 'import { ApiClient } from "apx.rest";\n\n';
-		outputStr += 'import { type TApiRequestOptions } from "apx.rest/ApiClient";\n\n';
+		outputStr += 'import { ApiClient, type TApiRequestOptions } from "apx.rest";\n\n';
 
 		for (const requestComponent of requestComponents.values()) {
 			outputStr += requestComponent.render();

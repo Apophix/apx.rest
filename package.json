@@ -7,20 +7,21 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc -p .",
 		"start": "node index.js",
-		"apx-generate": "tsx ./bin/codegen.ts",
-		"postinstall": "tsc -t es2022 -m nodenext --moduleResolution nodenext --outDir ./bin codegen.ts "
+		"apx-generate": "tsx ./codegen.ts"
 	},
 	"bin": {
-		"apx-gen": "./bin/codegen.js"
+		"apx-gen": "./codegen.ts"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": ["codegen", "typescript", "api", "rest"],
+	"author": "Apophix",
 	"license": "ISC",
-	"description": "",
+	"description": "TypeScript code generation tool for REST APIs",
 	"dependencies": {
 		"chalk": "^5",
+		"tsx": "^4"
+	},
+	"devDependencies": {
 		"@types/node": "^20",
-		"tsx": "^4",
 		"typescript": "^5"
 	}
 }

@@ -1,11 +1,12 @@
 {
 	"name": "apx.rest",
 	"version": "1.0.0",
-	"main": "index.js",
+	"main": "dist/index.js",
 	"type": "module",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc -p ./tsconfig.build.json",
+		"prepublishOnly": "npm run build",
 		"start": "node index.js",
 		"apx-generate": "tsx ./codegen.ts"
 	},
@@ -15,8 +16,7 @@
 	"files": [
 		"codegen.ts",
 		"generator/",
-		"*.ts",
-		"*.js",
+		"dist/",
 		"*.d.ts",
 		"README.md"
 	],

@@ -910,7 +910,7 @@ class Property implements TPropertyDto {
 		}
 
 		if (this.isDictionary) {
-			return `Record<string, ${this.additionalProperties?.formattedDtoType}>`;
+			return `Record<string, ${this.additionalProperties?.formattedDtoType ?? "any"}>`;
 		}
 
 		return this.type;
@@ -945,7 +945,7 @@ class Property implements TPropertyDto {
 		}
 
 		if (this.isDictionary) {
-			return `Map<string, ${this.additionalProperties?.formattedType}>`;
+			return `Map<string, ${this.additionalProperties?.formattedType ?? "any"}>`;
 		}
 
 		return this.type;

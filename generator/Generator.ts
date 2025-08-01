@@ -776,7 +776,11 @@ class Component implements TComponentDto {
 
 					}
 				}
-				str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
+				if (!!property.additionalProperties?.formattedType)
+					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
+				else 
+					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value]));`;
+				
 				continue;
 			}
 			str += `\n\t\tthis.${property.name} = dto.${property.name};`;

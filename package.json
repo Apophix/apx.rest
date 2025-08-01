@@ -5,13 +5,21 @@
 	"type": "module",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "tsc -p .",
+		"build": "tsc -p ./tsconfig.build.json",
 		"start": "node index.js",
 		"apx-generate": "tsx ./codegen.ts"
 	},
 	"bin": {
 		"apx-gen": "./codegen.ts"
 	},
+	"files": [
+		"codegen.ts",
+		"generator/",
+		"*.ts",
+		"*.js",
+		"*.d.ts",
+		"README.md"
+	],
 	"keywords": ["codegen", "typescript", "api", "rest"],
 	"author": "Apophix",
 	"license": "ISC",

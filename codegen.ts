@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { Generator } from "./generator/Generator.js";
+import { Generator } from "./generator/Generator.ts";
 
 const generator = new Generator(); 
 

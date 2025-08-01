@@ -753,7 +753,7 @@ class Component implements TComponentDto {
 				continue;
 			}
 			if (property.isArray && !property.referenceIsEnum) {
-				if (property.items?.referenceComponentName) {
+				if (property.items?.referenceComponentName && !property.items?.referenceIsEnum) {
 					str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName
 						}(item));`;
 					continue;

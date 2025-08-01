@@ -201,7 +201,7 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
-	public async delete<T>(path: string, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
+	public async delete<T>(path: string, body?: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
@@ -210,6 +210,7 @@ export abstract class ApiClient {
 		}
 		const response = await fetch(url, {
 			method: "DELETE",
+			body: body ? JSON.stringify(body) : undefined,
 			headers,
 		});
 

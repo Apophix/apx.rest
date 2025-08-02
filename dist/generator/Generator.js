@@ -586,7 +586,12 @@ class Component {
             }
             if (property.isArray && !property.referenceIsEnum) {
                 if (property.items?.referenceComponentName && !property.items?.referenceIsEnum) {
-                    str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items.referenceComponentName}(item));`;
+                    if (property.nullable) {
+                        str += `\n\t\tthis.${property.name} = dto.${property.name}?.map((item) => new ${property.items.referenceComponentName}(item));`;
+                    }
+                    else {
+                        str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items.referenceComponentName}(item));`;
+                    }
                     continue;
                 }
             }

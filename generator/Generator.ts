@@ -203,7 +203,9 @@ export class Generator {
 								}
 								let type = property["type"];
 								if (!type && property["oneOf"]) {
-									type = property["oneOf"][0]["#ref"]?.split("/").pop() || "any";
+									const oneOf = property["oneOf"];
+									iLog(4, chalk.magentaBright("oneOf found: ", oneOf));
+									type = oneOf[0]["#ref"]?.split("/").pop() || "any";
 								}
 								const referenceIsEnum =
 									enumNames.has(property["$ref"]?.split("/").pop()) ||

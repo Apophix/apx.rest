@@ -77,7 +77,12 @@ export class Generator {
 						const schemaRef = content["schema"]["$ref"];
 						if (!schemaRef) continue;
 						const schemaName = schemaRef.split("/").pop();
-						iLog(1, chalk.cyanBright(`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+						iLog(
+							1,
+							chalk.cyanBright(
+								`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+							)
+						);
 						responseNames.add(schemaName);
 					}
 				}
@@ -98,7 +103,12 @@ export class Generator {
 
 					if (!schemaRef) continue;
 					const schemaName = schemaRef.split("/").pop();
-					iLog(1, chalk.cyanBright(`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+					iLog(
+						1,
+						chalk.cyanBright(
+							`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+						)
+					);
 					requestNames.add(schemaName);
 				}
 			}
@@ -115,7 +125,10 @@ export class Generator {
 		log(chalk.blue("Scanning for enums..."));
 		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
 			if (schema["enum"]) {
-				iLog(1, chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`));
+				iLog(
+					1,
+					chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`)
+				);
 				enumNames.add(schemaName);
 			}
 		}
@@ -127,7 +140,12 @@ export class Generator {
 				iLog(2, chalk.cyanBright.dim("Processing as enum"));
 				enumComponents.set(
 					schemaName,
-					new EnumComponent({ name: schemaName, values: schema["enum"], enumNames: schema["x-enumNames"], type: schema["type"] || "string"})
+					new EnumComponent({
+						name: schemaName,
+						values: schema["enum"],
+						enumNames: schema["x-enumNames"],
+						type: schema["type"] || "string",
+					})
 				);
 				continue;
 			}
@@ -148,7 +166,9 @@ export class Generator {
 										nullable = false;
 									}
 								}
-								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+								const referenceIsEnum =
+									enumNames.has(property["$ref"]?.split("/").pop()) ||
+									enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 								return new Property({
 									name: propertyName,
 									type: property["type"],
@@ -181,10 +201,16 @@ export class Generator {
 										nullable = false;
 									}
 								}
-								const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+								let type = property["type"];
+								if (!type && property["oneOf"]) {
+									type = property["oneOf"][0]["#ref"]?.split("/").pop() || "any";
+								}
+								const referenceIsEnum =
+									enumNames.has(property["$ref"]?.split("/").pop()) ||
+									enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 								return new Property({
 									name: propertyName,
-									type: property["type"],
+									type,
 									nullable: nullable,
 									format: property["format"],
 									["$ref"]: property["$ref"],
@@ -215,10 +241,12 @@ export class Generator {
 							}
 						}
 						let type = property["type"];
-						if (!type && property["oneOf"]) { 
+						if (!type && property["oneOf"]) {
 							type = property["oneOf"][0]["#ref"]?.split("/").pop() || "any";
 						}
-						const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+						const referenceIsEnum =
+							enumNames.has(property["$ref"]?.split("/").pop()) ||
+							enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
 						return new Property({
 							name: propertyName,
 							type,
@@ -243,7 +271,8 @@ export class Generator {
 		outputStr += `// This file is generated from the OpenAPI document at ${documentUrl}\n\n`;
 		outputStr += `// File will be overwritten!!\n\n`;
 
-		outputStr += 'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
+		outputStr +=
+			'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
 
 		for (const requestComponent of requestComponents.values()) {
 			outputStr += requestComponent.render();
@@ -356,8 +385,8 @@ type TApiParameter = {
 		items: any;
 		type: string;
 		format?: string;
-	}
-}
+	};
+};
 
 class ApiPath implements TApiPathDto {
 	public endpoint: string;
@@ -387,8 +416,7 @@ class ApiPath implements TApiPathDto {
 	}
 
 	public get queryParams(): TApiParameter[] {
-		return this.parameters
-			.filter((param) => param.in === "query");
+		return this.parameters.filter((param) => param.in === "query");
 	}
 
 	public get hasQueryParams(): boolean {
@@ -407,10 +435,11 @@ class ApiPath implements TApiPathDto {
 		const suffix = this.isStreamed ? "Stream" : "";
 		const prefix = this.isStreamed ? "*" : "";
 
-		// operation id takes priority since that is directly set with an attribute in C# 
+		// operation id takes priority since that is directly set with an attribute in C#
 		if (this.operationId) {
 			let lowerCaseOperationId = stripUrlChars(this.operationId);
-			lowerCaseOperationId = lowerCaseOperationId.charAt(0).toLowerCase() + lowerCaseOperationId.slice(1);
+			lowerCaseOperationId =
+				lowerCaseOperationId.charAt(0).toLowerCase() + lowerCaseOperationId.slice(1);
 
 			return prefix + lowerCaseOperationId + suffix;
 		}
@@ -519,14 +548,18 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string,
 		clientFunctionName: string
 	): string {
-		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
+		return `public async ${
+			this.clientMethodName
+		}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-				.map(param => {
-					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-				})
-				.join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
+			.map((param) => {
+				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+			})
+			.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
+			this.hasQueryParams ? "?${queryParams}" : ""
+		}\`${this.requestStr}, options);
 		if (!response.ok || !data) {
 			return [null, response];
 		}
@@ -536,14 +569,18 @@ class ApiPath implements TApiPathDto {
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
-		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
+		return `public async ${
+			this.clientMethodName
+		}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-				.map(param => {
-					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-				})
-				.join("\n\t\t")}
-		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
+			.map((param) => {
+				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+			})
+			.join("\n\t\t")}
+		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${
+			this.hasQueryParams ? "?${queryParams}" : ""
+		}\`${this.requestStr}, options);
 
 		return [null, response];
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
@@ -554,14 +591,18 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
-		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
+		return `public async ${
+			this.clientMethodName
+		}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-				.map(param => {
-					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-				})
-				.join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, options);
+			.map((param) => {
+				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+			})
+			.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
+			this.hasQueryParams ? "?${queryParams}" : ""
+		}\`, options);
 
 		if (!response.ok || !data) {
 			return [null, response];
@@ -582,7 +623,7 @@ class ApiPath implements TApiPathDto {
 	public render(): string {
 		let requestDtoName = this.requestComponent?.dtoName ?? "any";
 		const responseDtoName = this.responseComponent?.dtoName ?? "any";
-		const finalResponse = this.responseComponent?.capitalizedName ?? "any"; 
+		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
 		const clientFunctionName = this.method;
 
 		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;
@@ -597,19 +638,20 @@ class ApiPath implements TApiPathDto {
 		}
 
 		if (this.hasQueryParams) {
-			const queryParamsType = `{ ${this.queryParams.map(param => {
-				let paramType = param.schema.type;
-				if (param.schema.format === "date-time") {
-					paramType = "string";
-				} else if (param.schema.type === "array") {
-					paramType = `${param.schema.items?.type}[]`;
-				} else if (param.schema.type === "integer")  {
-					paramType = "number";
-				}
-				if (!param.required)
-					return `${param.name}?: ${paramType}`;
-				return `${param.name}: ${paramType}`;
-			}).join(", ")} }`;
+			const queryParamsType = `{ ${this.queryParams
+				.map((param) => {
+					let paramType = param.schema.type;
+					if (param.schema.format === "date-time") {
+						paramType = "string";
+					} else if (param.schema.type === "array") {
+						paramType = `${param.schema.items?.type}[]`;
+					} else if (param.schema.type === "integer") {
+						paramType = "number";
+					}
+					if (!param.required) return `${param.name}?: ${paramType}`;
+					return `${param.name}: ${paramType}`;
+				})
+				.join(", ")} }`;
 			if (requestDtoName === "any") {
 				requestDtoName = queryParamsType;
 			} else {
@@ -649,33 +691,38 @@ class ApiPath implements TApiPathDto {
 type TEnumComponent = {
 	name: string;
 	values: string[];
-	type: string; 
-	enumNames?: string[]; 
+	type: string;
+	enumNames?: string[];
 };
 
 class EnumComponent implements TEnumComponent {
 	public name: string;
 	public values: string[];
-	public enumNames?: string[]; 
-	public type: string; 
+	public enumNames?: string[];
+	public type: string;
 
 	public constructor(dto: TEnumComponent) {
 		this.name = dto.name;
 		this.values = dto.values;
 		this.enumNames = dto.enumNames;
-		this.type = dto.type; 
+		this.type = dto.type;
 	}
 
 	public get capitalizedName(): string {
 		return this.name.charAt(0).toUpperCase() + this.name.slice(1);
 	}
 
-	public getEnumName(index: number): string { 
+	public getEnumName(index: number): string {
 		return this.enumNames?.[index] ?? this.values[index];
 	}
 
-	private formatValue(value: string): string { 
-		if (this.type === "integer" || this.type === "number" || this.type === "int32" || this.type === "int64") {
+	private formatValue(value: string): string {
+		if (
+			this.type === "integer" ||
+			this.type === "number" ||
+			this.type === "int32" ||
+			this.type === "int64"
+		) {
 			return value;
 		}
 		return `"${value}"`;
@@ -753,34 +800,40 @@ class Component implements TComponentDto {
 			if (property.isArray && !property.referenceIsEnum) {
 				if (property.items?.referenceComponentName && !property.items?.referenceIsEnum) {
 					if (property.nullable) {
-						str += `\n\t\tthis.${property.name} = dto.${property.name}?.map((item) => new ${property.items!.referenceComponentName}(item));`;
+						str += `\n\t\tthis.${property.name} = dto.${property.name}?.map((item) => new ${
+							property.items!.referenceComponentName
+						}(item));`;
 					} else {
-						str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName}(item));`;
+						str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${
+							property.items!.referenceComponentName
+						}(item));`;
 					}
-						
+
 					continue;
 				}
 			}
 
 			if (property.isDictionary) {
 				if (property.additionalProperties?.isArray) {
-					if (property.additionalProperties.referenceComponentName && !property.additionalProperties.referenceIsEnum) {
-						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
-							}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-								"[]",
-								""
-							)}(item))]));`;
+					if (
+						property.additionalProperties.referenceComponentName &&
+						!property.additionalProperties.referenceIsEnum
+					) {
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
+							property.name
+						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+							"[]",
+							""
+						)}(item))]));`;
 						continue;
 					} else {
-						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
-							}).map(([key, value]) => [key, value.map((item) => item)]));`;
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value.map((item) => item)]));`;
 						continue;
-
 					}
 				}
 				if (!!property.additionalProperties?.formattedType)
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
-				else 
+				else
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value]));`;
 
 				continue;
@@ -813,7 +866,7 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component { }
+class ModelComponent extends Component {}
 
 class RequestComponent extends Component {
 	public override render(): string {
@@ -830,7 +883,7 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component { }
+class ResponseComponent extends Component {}
 
 type TPropertyDto = {
 	name: string;
@@ -889,7 +942,7 @@ class Property implements TPropertyDto {
 	}
 
 	public get formattedDtoType(): string | undefined {
-		if (this.isArray && this.referenceIsEnum) { 
+		if (this.isArray && this.referenceIsEnum) {
 			return `${this.items?.referenceComponentName ?? "???"}[]`;
 		}
 
@@ -927,7 +980,7 @@ class Property implements TPropertyDto {
 
 		if (this.isNumberType) return "number";
 
-		if (this.isArray && this.referenceIsEnum) { 
+		if (this.isArray && this.referenceIsEnum) {
 			return `${this.items?.referenceComponentName ?? "???"}[]`;
 		}
 

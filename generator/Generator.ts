@@ -204,9 +204,7 @@ export class Generator {
 								let type = property["type"];
 								if (!type && property["oneOf"]) {
 									const oneOf = property["oneOf"];
-									iLog(4, chalk.magentaBright("oneOf found: ", JSON.stringify(oneOf)));
-									iLog(4, chalk.magentaBright("oneOf[0]: ", JSON.stringify(oneOf[0])));
-									type = oneOf[0]["#ref"]?.split("/").pop() || "any";
+									type = oneOf[0]["$ref"]?.split("/").pop() || "unknown";
 								}
 								const referenceIsEnum =
 									enumNames.has(property["$ref"]?.split("/").pop()) ||

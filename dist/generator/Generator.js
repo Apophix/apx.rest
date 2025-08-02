@@ -104,7 +104,12 @@ export class Generator {
             iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
             if (schema["enum"]) {
                 iLog(2, chalk.cyanBright.dim("Processing as enum"));
-                enumComponents.set(schemaName, new EnumComponent({ name: schemaName, values: schema["enum"], enumNames: schema["x-enumNames"], type: schema["type"] || "string" }));
+                enumComponents.set(schemaName, new EnumComponent({
+                    name: schemaName,
+                    values: schema["enum"],
+                    enumNames: schema["x-enumNames"],
+                    type: schema["type"] || "string",
+                }));
                 continue;
             }
             if (requestNames.has(schemaName)) {
@@ -120,7 +125,8 @@ export class Generator {
                                 nullable = false;
                             }
                         }
-                        const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+                        const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
+                            enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
                         return new Property({
                             name: propertyName,
                             type: property["type"],
@@ -147,10 +153,16 @@ export class Generator {
                                 nullable = false;
                             }
                         }
-                        const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+                        let type = property["type"];
+                        if (!type && property["oneOf"]) {
+                            const oneOf = property["oneOf"];
+                            type = oneOf[0]["$ref"]?.split("/").pop() || "unknown";
+                        }
+                        const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
+                            enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
                         return new Property({
                             name: propertyName,
-                            type: property["type"],
+                            type,
                             nullable: nullable,
                             format: property["format"],
                             ["$ref"]: property["$ref"],
@@ -175,10 +187,16 @@ export class Generator {
                             nullable = false;
                         }
                     }
-                    const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) || enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+                    let type = property["type"];
+                    if (!type && property["oneOf"]) {
+                        const oneOf = property["oneOf"];
+                        type = oneOf[0]["$ref"]?.split("/").pop() || "unknown";
+                    }
+                    const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
+                        enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
                     return new Property({
                         name: propertyName,
-                        type: property["type"],
+                        type,
                         nullable: nullable,
                         format: property["format"],
                         ["$ref"]: property["$ref"],
@@ -196,7 +214,8 @@ export class Generator {
         outputStr += `// Generated on ${new Date().toISOString()}\n\n`;
         outputStr += `// This file is generated from the OpenAPI document at ${documentUrl}\n\n`;
         outputStr += `// File will be overwritten!!\n\n`;
-        outputStr += 'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
+        outputStr +=
+            'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
         for (const requestComponent of requestComponents.values()) {
             outputStr += requestComponent.render();
             outputStr += "\n\n";
@@ -292,8 +311,7 @@ class ApiPath {
         return this.parameters.length > 0;
     }
     get queryParams() {
-        return this.parameters
-            .filter((param) => param.in === "query");
+        return this.parameters.filter((param) => param.in === "query");
     }
     get hasQueryParams() {
         return this.queryParams.length > 0;
@@ -307,10 +325,11 @@ class ApiPath {
     get clientMethodName() {
         const suffix = this.isStreamed ? "Stream" : "";
         const prefix = this.isStreamed ? "*" : "";
-        // operation id takes priority since that is directly set with an attribute in C# 
+        // operation id takes priority since that is directly set with an attribute in C#
         if (this.operationId) {
             let lowerCaseOperationId = stripUrlChars(this.operationId);
-            lowerCaseOperationId = lowerCaseOperationId.charAt(0).toLowerCase() + lowerCaseOperationId.slice(1);
+            lowerCaseOperationId =
+                lowerCaseOperationId.charAt(0).toLowerCase() + lowerCaseOperationId.slice(1);
             return prefix + lowerCaseOperationId + suffix;
         }
         const resourceName = stripUrlChars(this.endpoint);
@@ -394,7 +413,7 @@ class ApiPath {
         return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-            .map(param => {
+            .map((param) => {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
@@ -410,7 +429,7 @@ class ApiPath {
         return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-            .map(param => {
+            .map((param) => {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
@@ -423,7 +442,7 @@ class ApiPath {
         return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-            .map(param => {
+            .map((param) => {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
@@ -459,7 +478,8 @@ class ApiPath {
             }
         }
         if (this.hasQueryParams) {
-            const queryParamsType = `{ ${this.queryParams.map(param => {
+            const queryParamsType = `{ ${this.queryParams
+                .map((param) => {
                 let paramType = param.schema.type;
                 if (param.schema.format === "date-time") {
                     paramType = "string";
@@ -473,7 +493,8 @@ class ApiPath {
                 if (!param.required)
                     return `${param.name}?: ${paramType}`;
                 return `${param.name}: ${paramType}`;
-            }).join(", ")} }`;
+            })
+                .join(", ")} }`;
             if (requestDtoName === "any") {
                 requestDtoName = queryParamsType;
             }
@@ -514,7 +535,10 @@ class EnumComponent {
         return this.enumNames?.[index] ?? this.values[index];
     }
     formatValue(value) {
-        if (this.type === "integer" || this.type === "number" || this.type === "int32" || this.type === "int64") {
+        if (this.type === "integer" ||
+            this.type === "number" ||
+            this.type === "int32" ||
+            this.type === "int64") {
             return value;
         }
         return `"${value}"`;
@@ -589,7 +613,8 @@ class Component {
             }
             if (property.isDictionary) {
                 if (property.additionalProperties?.isArray) {
-                    if (property.additionalProperties.referenceComponentName && !property.additionalProperties.referenceIsEnum) {
+                    if (property.additionalProperties.referenceComponentName &&
+                        !property.additionalProperties.referenceIsEnum) {
                         str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace("[]", "")}(item))]));`;
                         continue;
                     }

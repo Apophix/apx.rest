@@ -578,7 +578,7 @@ class ApiPath implements TApiPathDto {
 	public render(): string {
 		let requestDtoName = this.requestComponent?.dtoName ?? "any";
 		const responseDtoName = this.responseComponent?.dtoName ?? "any";
-		const finalResponse = `$TApiClientResult<${this.responseComponent?.capitalizedName ?? "any"}>`;
+		const finalResponse = this.responseComponent?.capitalizedName ?? "any"; 
 		const clientFunctionName = this.method;
 
 		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;

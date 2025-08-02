@@ -207,12 +207,14 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"]) {
+		if (!headers["Content-Type"] && !!body) {
 			headers["Content-Type"] = "application/json";
 		}
 		if (!body) { 
 			delete headers["Content-Type"];
 		}
+		console.log("Headers for DELETE request:", headers);
+		console.log("Body for DELETE request:", body);
 		const response = await fetch(url, {
 			method: "DELETE",
 			body: body ? JSON.stringify(body) : undefined,

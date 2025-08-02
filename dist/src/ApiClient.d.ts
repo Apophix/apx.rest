@@ -2,6 +2,7 @@ export declare enum HeaderType {
     Transient = 0,
     Persistent = 1
 }
+export type TApiClientResult<TData> = [TData | null, Response];
 export declare abstract class ApiClient {
     private _baseUrl;
     private _defaultToUseBearerToken;

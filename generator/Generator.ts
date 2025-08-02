@@ -239,7 +239,7 @@ export class Generator {
 		outputStr += `// This file is generated from the OpenAPI document at ${documentUrl}\n\n`;
 		outputStr += `// File will be overwritten!!\n\n`;
 
-		outputStr += 'import { ApiClient, type TApiRequestOptions } from "apx.rest";\n\n';
+		outputStr += 'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
 
 		for (const requestComponent of requestComponents.values()) {
 			outputStr += requestComponent.render();
@@ -515,7 +515,7 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string,
 		clientFunctionName: string
 	): string {
-		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<${finalResponse}> {
+		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
@@ -523,20 +523,16 @@ class ApiPath implements TApiPathDto {
 				})
 				.join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
-		if (!response.ok) {
-			throw new Error(response.statusText);
+		if (!response.ok || !data) {
+			return [null, response];
 		}
 
-		if (!data) { 
-			throw new Error('No data returned from server');
-		}
-
-		return new ${finalResponse}(data);
+		return [new ${finalResponse}(data), response];
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines;
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
-		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<boolean> {
+		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
@@ -545,7 +541,7 @@ class ApiPath implements TApiPathDto {
 				.join("\n\t\t")}
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
 
-		return response.ok; 
+		return [null, response];
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
 	}
 
@@ -554,7 +550,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
-		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<${finalResponse}> {
+		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
 				.map(param => {
@@ -563,30 +559,26 @@ class ApiPath implements TApiPathDto {
 				.join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, options);
 
-		if (!response.ok) {
-			throw new Error(response.statusText);
+		if (!response.ok || !data) {
+			return [null, response];
 		}
 
-		if (!data) { 
-			throw new Error('No data returned from server');
-		}
-
-		return new ${finalResponse}(data);
+		return [new ${finalResponse}(data), response]; 
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
 	}
 
 	private renderNoRequestNoResponse(clientFunctionName: string): string {
-		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<boolean> {
+		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}\`, options);
-		
-		return response.ok;
+
+		return [null, response];
 	}`;
 	}
 
 	public render(): string {
 		let requestDtoName = this.requestComponent?.dtoName ?? "any";
 		const responseDtoName = this.responseComponent?.dtoName ?? "any";
-		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
+		const finalResponse = `$TApiClientResult<${this.responseComponent?.capitalizedName ?? "any"}>`;
 		const clientFunctionName = this.method;
 
 		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;

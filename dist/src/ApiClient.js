@@ -162,8 +162,11 @@ export class ApiClient {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
         const headers = await this.buildHeaders(options);
-        if (!headers["Content-Type"] && body) {
+        if (!headers["Content-Type"]) {
             headers["Content-Type"] = "application/json";
+        }
+        if (!body) {
+            delete headers["Content-Type"];
         }
         const response = await fetch(url, {
             method: "DELETE",

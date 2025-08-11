@@ -1,9 +1,9 @@
-export enum HeaderType { 
-	Transient, 
-	Persistent
+export enum HeaderType {
+	Transient,
+	Persistent,
 }
 
-export type TApiClientResult<TData> = [TData | null, Response]
+export type TApiClientResult<TData> = [TData | null, Response];
 
 export abstract class ApiClient {
 	private _baseUrl: string;
@@ -29,15 +29,12 @@ export abstract class ApiClient {
 		return `${this.baseUrl}${path}`;
 	}
 
-	protected basicHeaders: Record<string, string> = {
-		
-	};
+	protected basicHeaders: Record<string, string> = {};
 
-	protected transientHeaders: Record<string, string> = {}; 
+	protected transientHeaders: Record<string, string> = {};
 
 	protected persistentHeaders: Record<string, string> = {};
 
-	
 	public useBearerTokenProvider(provider: () => Promise<string>): void {
 		this._bearerTokenProvider = provider;
 	}
@@ -54,7 +51,7 @@ export abstract class ApiClient {
 		} else {
 			throw new Error("Invalid header type");
 		}
-	} 
+	}
 
 	private async buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>> {
 		const headers = options?.requestHeaders || {};
@@ -123,7 +120,13 @@ export abstract class ApiClient {
 			return { data: undefined, response };
 		}
 
-		const data = await response.json();
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
 
 		return { data, response };
 	}
@@ -150,7 +153,13 @@ export abstract class ApiClient {
 			return { data: undefined, response };
 		}
 
-		const data = await response.json();
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
 
 		return { data, response };
 	}
@@ -172,7 +181,13 @@ export abstract class ApiClient {
 			return { data: undefined, response };
 		}
 
-		const data = await response.json();
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
 
 		return { data, response };
 	}
@@ -198,19 +213,29 @@ export abstract class ApiClient {
 			return { data: undefined, response };
 		}
 
-		const data = await response.json();
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
 
 		return { data, response };
 	}
 
-	public async delete<T>(path: string, body?: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
+	public async delete<T>(
+		path: string,
+		body?: unknown,
+		options?: TApiRequestOptions
+	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
 		if (!headers["Content-Type"] && !!body) {
 			headers["Content-Type"] = "application/json";
 		}
-		if (!body) { 
+		if (!body) {
 			delete headers["Content-Type"];
 		}
 		console.log("Headers for DELETE request:", headers);
@@ -221,7 +246,13 @@ export abstract class ApiClient {
 			headers,
 		});
 
-		const data = await response.json();
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
 
 		return { data, response };
 	}
@@ -461,6 +492,7 @@ export type TApiRequestOptions = {
 	useBearerToken?: boolean;
 	// not implemented yet
 	expectedDataResponseType?: EExpectedDataResponseType;
+	skipJsonParsing?: boolean;
 };
 
 export type TApiResponse<T> = {
@@ -472,4 +504,5 @@ const DEFAULT_REQUEST_OPTIONS: TApiRequestOptions = {
 	requestHeaders: { "Content-Type": "application/json" },
 	useBearerToken: false,
 	expectedDataResponseType: EExpectedDataResponseType.Json,
+	skipJsonParsing: false,
 } as const;

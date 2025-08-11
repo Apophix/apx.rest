@@ -59,6 +59,7 @@ export type TApiRequestOptions = {
     requestHeaders?: Record<string, string>;
     useBearerToken?: boolean;
     expectedDataResponseType?: EExpectedDataResponseType;
+    skipJsonParsing?: boolean;
 };
 export type TApiResponse<T> = {
     data?: T;

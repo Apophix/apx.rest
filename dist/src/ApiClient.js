@@ -100,7 +100,13 @@ export class ApiClient {
         if (!response.ok) {
             return { data: undefined, response };
         }
-        const data = await response.json();
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
         return { data, response };
     }
     async post(path, body, options) {
@@ -119,7 +125,13 @@ export class ApiClient {
         if (!response.ok) {
             return { data: undefined, response };
         }
-        const data = await response.json();
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
         return { data, response };
     }
     async put(path, body, options) {
@@ -137,7 +149,13 @@ export class ApiClient {
         if (!response.ok) {
             return { data: undefined, response };
         }
-        const data = await response.json();
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
         return { data, response };
     }
     async patch(path, body, options) {
@@ -155,7 +173,13 @@ export class ApiClient {
         if (!response.ok) {
             return { data: undefined, response };
         }
-        const data = await response.json();
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
         return { data, response };
     }
     async delete(path, body, options) {
@@ -175,7 +199,13 @@ export class ApiClient {
             body: body ? JSON.stringify(body) : undefined,
             headers,
         });
-        const data = await response.json();
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
         return { data, response };
     }
     async *getRawIterable(path, options) {
@@ -372,4 +402,5 @@ const DEFAULT_REQUEST_OPTIONS = {
     requestHeaders: { "Content-Type": "application/json" },
     useBearerToken: false,
     expectedDataResponseType: EExpectedDataResponseType.Json,
+    skipJsonParsing: false,
 };

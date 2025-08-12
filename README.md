@@ -293,3 +293,32 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 ---
 
 **apx.rest** - Making REST API consumption type-safe and effortless! 🚀
+
+
+--- 
+
+### ASP.NET Swagger Configuration
+
+Install NuGet package: 
+`Unchase.Swashbuckle.AspNetCore.Extensions`
+
+Add these to `Program.cs`: 
+
+```csharp
+builder.Services.AddSwaggerGen(o =>
+{
+	o.SupportNonNullableReferenceTypes();
+});
+
+builder.Services.Configure<JsonOptions>(o =>
+{
+	o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+	o.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+	o.SerializerOptions.PropertyNameCaseInsensitive = true;
+	o.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+builder.Services.ConfigureSwaggerGen(o => o.AddEnumsWithValuesFixFilters());
+```
+
+> I'm slightly unsure which of these are necessary, but enums will not work if you don't have at least some of that... so.

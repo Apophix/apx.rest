@@ -90,7 +90,7 @@ export class Generator {
                                 properties: Object.entries(content["schema"]["properties"]).map(([propertyName, property]) => {
                                     return new Property({
                                         name: propertyName,
-                                        type: property["type"],
+                                        type: property["format"] === "binary" ? "File" : property["type"],
                                         nullable: property["nullable"] || false,
                                         format: property["format"],
                                         referenceIsEnum: false,

@@ -113,7 +113,7 @@ export class Generator {
 									([propertyName, property]) => {
 										return new Property({
 											name: propertyName,
-											type: property["type"],
+											type: property["format"] === "binary" ? "File" : property["type"],
 											nullable: property["nullable"] || false,
 											format: property["format"],
 											referenceIsEnum: false,

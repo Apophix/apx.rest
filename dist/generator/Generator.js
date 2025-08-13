@@ -475,23 +475,24 @@ class ApiPath {
         return ret;
     }
     renderRequestOnly(requestDtoName, clientFunctionName) {
-        return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
-		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
-		${this.queryParams
-            .map((param) => {
-            return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-        })
-            .join("\n\t\t")}
-						${this.isFormEndpoint ? `const formData = new FormData();` : ""}
-			${this.requestComponent?.properties
-            ?.map((formField) => {
-            return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
-        })
-            .join("\n\t\t")}
-		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
-
-		return [null, response];
-	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
+        let ret = `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {\n`;
+        if (this.hasQueryParams) {
+            ret += `\tconst queryParams = new URLSearchParams();\n`;
+            for (const queryParam of this.queryParams) {
+                ret += `\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
+            }
+        }
+        if (this.isFormEndpoint) {
+            ret += `\tconst formData = new FormData();\n`;
+            for (const formField of this.requestComponent?.properties ?? []) {
+                ret += `\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
+            }
+        }
+        ret += `\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);`;
+        ret += "\treturn [null, response];\n";
+        ret += "}\n";
+        ret = ret.replaceAll(/^\s*$/gm, "");
+        return ret;
     }
     renderResponseOnly(responseDtoName, clientFunctionName, finalResponse) {
         return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {

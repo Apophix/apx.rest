@@ -16,7 +16,7 @@ const requestComponents = new Map<string, RequestComponent>();
 const responseComponents = new Map<string, ResponseComponent>();
 const modelComponents = new Map<string, ModelComponent>();
 const enumNames = new Set<string>();
-const endpointToFormRequestNameMap = new Map<string, string>(); 
+const endpointToFormRequestNameMap = new Map<string, string>();
 
 export class Generator {
 	public async generate(): Promise<void> {
@@ -102,35 +102,47 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
-					if (!schemaRef) { 
-						if (contentType === "multipart/form-data") { 
-							// process form data here 
+					if (!schemaRef) {
+						if (contentType === "multipart/form-data") {
+							// process form data here
 							const operationName = operation["operationId"];
-							const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-							iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
-							requestComponents.set(formSchemaName, new RequestComponent({
-								componentType: EComponentType.Request,
-								name: formSchemaName,
-								properties: Object.entries<any>(content["schema"]["properties"]).map(
-									([propertyName, property]) => {
-										return new Property({
-											name: propertyName,
-											type: property["format"] === "binary" ? "File" : property["type"],
-											nullable: property["nullable"] || false,
-											format: property["format"],
-											referenceIsEnum: false,
-											isFormField: true,
-										});
-									}
-								),
-								requiredProperties: content["schema"]["required"] || [],
-							}));
+							const formSchemaName = `${operationName
+								.charAt(0)
+								.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+							iLog(
+								1,
+								chalk.cyanBright(
+									`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+								)
+							);
+							requestComponents.set(
+								formSchemaName,
+								new RequestComponent({
+									componentType: EComponentType.Request,
+									name: formSchemaName,
+									properties: Object.entries<any>(content["schema"]["properties"]).map(
+										([propertyName, property]) => {
+											return new Property({
+												name: propertyName,
+												type:
+													property["format"] === "binary"
+														? "File"
+														: property["type"],
+												nullable: property["nullable"] || false,
+												format: property["format"],
+												referenceIsEnum: false,
+												isFormField: true,
+											});
+										}
+									),
+									requiredProperties: content["schema"]["required"] || [],
+								})
+							);
 
-							
 							endpointToFormRequestNameMap.set(operationName, formSchemaName);
 						}
-						continue; 
-					} 
+						continue;
+					}
 					const schemaName = schemaRef.split("/").pop();
 					iLog(
 						1,
@@ -404,7 +416,7 @@ type TApiPathDto = {
 	requestComponentName: string;
 	responseComponentName: string;
 	isStreamed: boolean;
-	isFormEndpoint: boolean; 
+	isFormEndpoint: boolean;
 	parameters?: TApiParameter[];
 };
 
@@ -437,7 +449,7 @@ class ApiPath implements TApiPathDto {
 	public requestComponentName: string;
 	public responseComponentName: string;
 	public isStreamed: boolean;
-	public isFormEndpoint: boolean; 
+	public isFormEndpoint: boolean;
 	public parameters: TApiParameter[] = [];
 
 	public constructor(dto: TApiPathDto) {
@@ -450,7 +462,7 @@ class ApiPath implements TApiPathDto {
 		this.requestComponentName = dto.requestComponentName;
 		this.responseComponentName = dto.responseComponentName;
 		this.isStreamed = dto.isStreamed;
-		this.isFormEndpoint = dto.isFormEndpoint; 
+		this.isFormEndpoint = dto.isFormEndpoint;
 
 		this.parameters = dto.parameters || [];
 	}
@@ -604,9 +616,11 @@ class ApiPath implements TApiPathDto {
 			})
 			.join("\n\t\t")}
 			${this.isFormEndpoint ? `const formData = new FormData();` : ""}
-			${this.requestComponent?.properties?.map(formField => {
-				return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
-			}).join("\n\t\t")}
+			${this.requestComponent?.properties
+				?.map((formField) => {
+					return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
+				})
+				.join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
 		}\`${this.requestStr}, options);
@@ -628,6 +642,12 @@ class ApiPath implements TApiPathDto {
 				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
 			})
 			.join("\n\t\t")}
+						${this.isFormEndpoint ? `const formData = new FormData();` : ""}
+			${this.requestComponent?.properties
+				?.map((formField) => {
+					return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
+				})
+				.join("\n\t\t")}
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
 		}\`${this.requestStr}, options);
@@ -676,9 +696,9 @@ class ApiPath implements TApiPathDto {
 		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
 		let clientFunctionName = this.method;
 
-		// uh, don't patch a form yet lol 
-		if (this.isFormEndpoint) { 
-			clientFunctionName = `${this.method}FormData`; 
+		// uh, don't patch a form yet lol
+		if (this.isFormEndpoint) {
+			clientFunctionName = `${this.method}FormData`;
 		}
 		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;
 
@@ -1067,11 +1087,11 @@ class Property implements TPropertyDto {
 		return this.type;
 	}
 
-	public get lowerCamelName() : string { 
+	public get lowerCamelName(): string {
 		return this.name.charAt(0).toLowerCase() + this.name.slice(1);
 	}
 
-	public get renderName() : string { 
+	public get renderName(): string {
 		return this.isFormField ? this.lowerCamelName : this.name;
 	}
 
@@ -1080,7 +1100,6 @@ class Property implements TPropertyDto {
 	}
 
 	public renderAsDto(): string {
-
 		return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;
 	}
 }

@@ -82,9 +82,11 @@ export class Generator {
                     const schemaRef = content["schema"]["$ref"];
                     if (!schemaRef) {
                         if (contentType === "multipart/form-data") {
-                            // process form data here 
+                            // process form data here
                             const operationName = operation["operationId"];
-                            const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+                            const formSchemaName = `${operationName
+                                .charAt(0)
+                                .toUpperCase()}${operationName.slice(1)}FormDataRequest`;
                             iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
                             requestComponents.set(formSchemaName, new RequestComponent({
                                 componentType: EComponentType.Request,
@@ -92,7 +94,9 @@ export class Generator {
                                 properties: Object.entries(content["schema"]["properties"]).map(([propertyName, property]) => {
                                     return new Property({
                                         name: propertyName,
-                                        type: property["format"] === "binary" ? "File" : property["type"],
+                                        type: property["format"] === "binary"
+                                            ? "File"
+                                            : property["type"],
                                         nullable: property["nullable"] || false,
                                         format: property["format"],
                                         referenceIsEnum: false,
@@ -456,9 +460,11 @@ class ApiPath {
         })
             .join("\n\t\t")}
 			${this.isFormEndpoint ? `const formData = new FormData();` : ""}
-			${this.requestComponent?.properties?.map(formField => {
+			${this.requestComponent?.properties
+            ?.map((formField) => {
             return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
-        }).join("\n\t\t")}
+        })
+            .join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
 		if (!response.ok || !data) {
 			return [null, response];
@@ -473,6 +479,12 @@ class ApiPath {
 		${this.queryParams
             .map((param) => {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+        })
+            .join("\n\t\t")}
+						${this.isFormEndpoint ? `const formData = new FormData();` : ""}
+			${this.requestComponent?.properties
+            ?.map((formField) => {
+            return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
         })
             .join("\n\t\t")}
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
@@ -509,7 +521,7 @@ class ApiPath {
         const responseDtoName = this.responseComponent?.dtoName ?? "any";
         const finalResponse = this.responseComponent?.capitalizedName ?? "any";
         let clientFunctionName = this.method;
-        // uh, don't patch a form yet lol 
+        // uh, don't patch a form yet lol
         if (this.isFormEndpoint) {
             clientFunctionName = `${this.method}FormData`;
         }

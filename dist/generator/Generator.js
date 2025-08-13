@@ -454,42 +454,42 @@ class ApiPath {
     renderRequestAndResponse(requestDtoName, responseDtoName, finalResponse, clientFunctionName) {
         let ret = `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {\n`;
         if (this.hasQueryParams) {
-            ret += `\tconst queryParams = new URLSearchParams();\n`;
+            ret += `\t\tconst queryParams = new URLSearchParams();\n`;
             for (const queryParam of this.queryParams) {
-                ret += `\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
+                ret += `\t\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
             }
         }
         if (this.isFormEndpoint) {
-            ret += `\tconst formData = new FormData();\n`;
+            ret += `\t\tconst formData = new FormData();\n`;
             for (const formField of this.requestComponent?.properties ?? []) {
-                ret += `\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
+                ret += `\t\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
             }
         }
-        ret += `\tconst { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);`;
-        ret += "\tif (!response.ok || !data) {\n";
-        ret += `\t\treturn [null, response];\n`;
-        ret += `\t}\n`;
-        ret += `\treturn [new ${finalResponse}(data), response];\n`;
-        ret += "}";
+        ret += `\t\tconst { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);`;
+        ret += "\t\tif (!response.ok || !data) {\n";
+        ret += `\t\t\treturn [null, response];\n`;
+        ret += `\t\t}\n`;
+        ret += `\t\treturn [new ${finalResponse}(data), response];\n`;
+        ret += "}\n";
         ret = ret.replaceAll(/^\s*$/gm, ""); // remove empty lines
         return ret;
     }
     renderRequestOnly(requestDtoName, clientFunctionName) {
         let ret = `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {\n`;
         if (this.hasQueryParams) {
-            ret += `\tconst queryParams = new URLSearchParams();\n`;
+            ret += `\t\tconst queryParams = new URLSearchParams();\n`;
             for (const queryParam of this.queryParams) {
-                ret += `\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
+                ret += `\t\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
             }
         }
         if (this.isFormEndpoint) {
-            ret += `\tconst formData = new FormData();\n`;
+            ret += `\t\tconst formData = new FormData();\n`;
             for (const formField of this.requestComponent?.properties ?? []) {
-                ret += `\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
+                ret += `\t\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
             }
         }
-        ret += `\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);`;
-        ret += "\treturn [null, response];\n";
+        ret += `\t\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);\n`;
+        ret += "\t\treturn [null, response];\n";
         ret += "}\n";
         ret = ret.replaceAll(/^\s*$/gm, "");
         return ret;

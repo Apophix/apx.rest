@@ -96,11 +96,11 @@ export class Generator {
                                         nullable: property["nullable"] || false,
                                         format: property["format"],
                                         referenceIsEnum: false,
+                                        isFormField: true,
                                     });
                                 }),
                                 requiredProperties: content["schema"]["required"] || [],
                             }));
-                            // TODO: establish mapping of endpointName -> FormRequest Schema for later generation use
                             endpointToFormRequestNameMap.set(operationName, formSchemaName);
                         }
                         continue;
@@ -161,6 +161,7 @@ export class Generator {
                             referenceIsEnum,
                             items: property["items"],
                             additionalProperties: property["additionalProperties"],
+                            isFormField: false,
                         });
                     }),
                 }));
@@ -194,6 +195,7 @@ export class Generator {
                             referenceIsEnum,
                             items: property["items"],
                             additionalProperties: property["additionalProperties"],
+                            isFormField: false,
                         });
                     }),
                     componentType: EComponentType.Response,
@@ -228,6 +230,7 @@ export class Generator {
                         referenceIsEnum,
                         items: property["items"],
                         additionalProperties: property["additionalProperties"],
+                        isFormField: false,
                     });
                 }),
             }));
@@ -283,6 +286,7 @@ export class Generator {
                         ?.split("/")
                         .pop(),
                     isStreamed: streamedEndpoints.includes(endpoint),
+                    isFormEndpoint: !!formRequest,
                 }));
             }
         }
@@ -324,6 +328,7 @@ class ApiPath {
     requestComponentName;
     responseComponentName;
     isStreamed;
+    isFormEndpoint;
     parameters = [];
     constructor(dto) {
         this.endpoint = dto.endpoint;
@@ -335,6 +340,7 @@ class ApiPath {
         this.requestComponentName = dto.requestComponentName;
         this.responseComponentName = dto.responseComponentName;
         this.isStreamed = dto.isStreamed;
+        this.isFormEndpoint = dto.isFormEndpoint;
         this.parameters = dto.parameters || [];
     }
     get hasParameters() {
@@ -428,6 +434,8 @@ class ApiPath {
             return "";
         if (!this.requestComponent)
             return "";
+        if (this.isFormEndpoint)
+            return ", formData";
         return this.shouldSkipRequest ? ", {}" : ", request";
     }
     renderRequestAndStreamedResponse(requestDtoName, responseDtoName, finalResponse, clientFunctionName) {
@@ -447,6 +455,10 @@ class ApiPath {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
+			${this.isFormEndpoint ? `const formData = new FormData();` : ""}
+			${this.requestComponent?.properties?.map(formField => {
+            return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
+        }).join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);
 		if (!response.ok || !data) {
 			return [null, response];
@@ -496,7 +508,11 @@ class ApiPath {
         let requestDtoName = this.requestComponent?.dtoName ?? "any";
         const responseDtoName = this.responseComponent?.dtoName ?? "any";
         const finalResponse = this.responseComponent?.capitalizedName ?? "any";
-        const clientFunctionName = this.method;
+        let clientFunctionName = this.method;
+        // uh, don't patch a form yet lol 
+        if (this.isFormEndpoint) {
+            clientFunctionName = `${this.method}FormData`;
+        }
         const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;
         if (this.hasPathParams) {
             const pathParamType = `{ ${this.pathParams.map((param) => `${param}: string`).join(", ")} }`;
@@ -710,6 +726,7 @@ class Property {
     referenceIsEnum;
     items; // for arrays
     additionalProperties; // for dictionaries
+    isFormField;
     constructor(dto) {
         this.name = dto.name;
         this.type = dto.type;
@@ -721,6 +738,7 @@ class Property {
         this.additionalProperties = dto.additionalProperties
             ? new Property(dto.additionalProperties)
             : undefined;
+        this.isFormField = dto.isFormField;
     }
     get referenceComponentName() {
         if (this["$ref"]) {
@@ -799,10 +817,16 @@ class Property {
         }
         return this.type;
     }
+    get lowerCamelName() {
+        return this.name.charAt(0).toLowerCase() + this.name.slice(1);
+    }
+    get renderName() {
+        return this.isFormField ? this.lowerCamelName : this.name;
+    }
     render() {
-        return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedType};`;
+        return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedType};`;
     }
     renderAsDto() {
-        return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;
+        return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;
     }
 }

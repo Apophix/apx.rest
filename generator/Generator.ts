@@ -119,13 +119,14 @@ export class Generator {
 											nullable: property["nullable"] || false,
 											format: property["format"],
 											referenceIsEnum: false,
+											isFormField: true,
 										});
 									}
 								),
 								requiredProperties: content["schema"]["required"] || [],
 							}));
 
-							// TODO: establish mapping of endpointName -> FormRequest Schema for later generation use
+							
 							endpointToFormRequestNameMap.set(operationName, formSchemaName);
 						}
 						continue; 
@@ -206,6 +207,7 @@ export class Generator {
 									referenceIsEnum,
 									items: property["items"],
 									additionalProperties: property["additionalProperties"],
+									isFormField: false,
 								});
 							}
 						),
@@ -246,6 +248,7 @@ export class Generator {
 									referenceIsEnum,
 									items: property["items"],
 									additionalProperties: property["additionalProperties"],
+									isFormField: false,
 								});
 							}
 						),
@@ -286,6 +289,7 @@ export class Generator {
 							referenceIsEnum,
 							items: property["items"],
 							additionalProperties: property["additionalProperties"],
+							isFormField: false,
 						});
 					}),
 				})
@@ -601,7 +605,7 @@ class ApiPath implements TApiPathDto {
 			.join("\n\t\t")}
 			${this.isFormEndpoint ? `const formData = new FormData();` : ""}
 			${this.requestComponent?.properties?.map(formField => {
-				return `formData.append("${formField.name}", request.${formField.name});`;
+				return `formData.append("${formField.name}", request.${formField.lowerCamelName});`;
 			}).join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
@@ -944,6 +948,7 @@ type TPropertyDto = {
 	referenceIsEnum: boolean;
 	items?: TPropertyDto; // for arrays
 	additionalProperties?: TPropertyDto; // for dictionaries
+	isFormField: boolean;
 };
 
 class Property implements TPropertyDto {
@@ -955,6 +960,7 @@ class Property implements TPropertyDto {
 	public referenceIsEnum: boolean;
 	public items?: Property; // for arrays
 	public additionalProperties?: Property; // for dictionaries
+	public isFormField: boolean;
 
 	public constructor(dto: TPropertyDto) {
 		this.name = dto.name;
@@ -967,6 +973,7 @@ class Property implements TPropertyDto {
 		this.additionalProperties = dto.additionalProperties
 			? new Property(dto.additionalProperties)
 			: undefined;
+		this.isFormField = dto.isFormField;
 	}
 
 	public get referenceComponentName(): string | undefined {
@@ -1060,11 +1067,20 @@ class Property implements TPropertyDto {
 		return this.type;
 	}
 
+	public get lowerCamelName() : string { 
+		return this.name.charAt(0).toLowerCase() + this.name.slice(1);
+	}
+
+	public get renderName() : string { 
+		return this.isFormField ? this.lowerCamelName : this.name;
+	}
+
 	public render(): string {
-		return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedType};`;
+		return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedType};`;
 	}
 
 	public renderAsDto(): string {
-		return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;
+
+		return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;
 	}
 }

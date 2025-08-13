@@ -134,6 +134,28 @@ export class ApiClient {
         }
         return { data, response };
     }
+    async postFormData(path, formData, options) {
+        const url = this.buildUrl(path);
+        options = this.buildRequestOptions(options);
+        const headers = await this.buildHeaders(options);
+        headers["Content-Type"] = "multipart/form-data";
+        const response = await fetch(url, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+        if (!response.ok) {
+            return { data: undefined, response };
+        }
+        let data;
+        if (!options.skipJsonParsing) {
+            const text = await response.text();
+            if (text) {
+                data = JSON.parse(text);
+            }
+        }
+        return { data, response };
+    }
     async put(path, body, options) {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);

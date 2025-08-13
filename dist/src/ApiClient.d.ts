@@ -20,6 +20,7 @@ export declare abstract class ApiClient {
     private buildRequestOptions;
     get<T>(path: string, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     post<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
+    postFormData<T>(path: string, formData: FormData, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     put<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     patch<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     delete<T>(path: string, body?: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>>;

@@ -625,7 +625,7 @@ class ApiPath implements TApiPathDto {
 		ret += `\t\t}\n`;
 
 		ret += `\t\treturn [new ${finalResponse}(data), response];\n`;
-		ret += "}\n"; 
+		ret += "\t}\n"; 
 		ret = ret.replaceAll(/^\s*$/gm, ""); // remove empty lines
 		return ret; 
 	}
@@ -650,7 +650,7 @@ class ApiPath implements TApiPathDto {
 		}\`${this.requestStr}, options);\n`; 
 
 		ret += "\t\treturn [null, response];\n";
-		ret += "}\n";
+		ret += "\t}\n";
 
 		ret = ret.replaceAll(/^\s*$/gm, "");
 

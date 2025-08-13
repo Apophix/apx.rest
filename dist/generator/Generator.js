@@ -470,7 +470,7 @@ class ApiPath {
         ret += `\t\t\treturn [null, response];\n`;
         ret += `\t\t}\n`;
         ret += `\t\treturn [new ${finalResponse}(data), response];\n`;
-        ret += "}\n";
+        ret += "\t}\n";
         ret = ret.replaceAll(/^\s*$/gm, ""); // remove empty lines
         return ret;
     }
@@ -490,7 +490,7 @@ class ApiPath {
         }
         ret += `\t\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);\n`;
         ret += "\t\treturn [null, response];\n";
-        ret += "}\n";
+        ret += "\t}\n";
         ret = ret.replaceAll(/^\s*$/gm, "");
         return ret;
     }

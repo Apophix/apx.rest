@@ -357,6 +357,7 @@ export class Generator {
 							?.split("/")
 							.pop(),
 						isStreamed: streamedEndpoints.includes(endpoint),
+						isFormEndpoint: !!formRequest,
 					})
 				);
 			}
@@ -399,6 +400,7 @@ type TApiPathDto = {
 	requestComponentName: string;
 	responseComponentName: string;
 	isStreamed: boolean;
+	isFormEndpoint: boolean; 
 	parameters?: TApiParameter[];
 };
 
@@ -431,6 +433,7 @@ class ApiPath implements TApiPathDto {
 	public requestComponentName: string;
 	public responseComponentName: string;
 	public isStreamed: boolean;
+	public isFormEndpoint: boolean; 
 	public parameters: TApiParameter[] = [];
 
 	public constructor(dto: TApiPathDto) {
@@ -443,6 +446,7 @@ class ApiPath implements TApiPathDto {
 		this.requestComponentName = dto.requestComponentName;
 		this.responseComponentName = dto.responseComponentName;
 		this.isStreamed = dto.isStreamed;
+		this.isFormEndpoint = dto.isFormEndpoint; 
 
 		this.parameters = dto.parameters || [];
 	}
@@ -560,6 +564,8 @@ class ApiPath implements TApiPathDto {
 
 		if (!this.requestComponent) return "";
 
+		if (this.isFormEndpoint) return ", formData";
+
 		return this.shouldSkipRequest ? ", {}" : ", request";
 	}
 
@@ -593,6 +599,10 @@ class ApiPath implements TApiPathDto {
 				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
 			})
 			.join("\n\t\t")}
+			${this.isFormEndpoint ? `const formData = new FormData();` : ""}
+			${this.requestComponent?.properties?.map(formField => {
+				return `formData.append("${formField.name}", request.${formField.name});`;
+			}).join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
 		}\`${this.requestStr}, options);
@@ -660,8 +670,12 @@ class ApiPath implements TApiPathDto {
 		let requestDtoName = this.requestComponent?.dtoName ?? "any";
 		const responseDtoName = this.responseComponent?.dtoName ?? "any";
 		const finalResponse = this.responseComponent?.capitalizedName ?? "any";
-		const clientFunctionName = this.method;
+		let clientFunctionName = this.method;
 
+		// uh, don't patch a form yet lol 
+		if (this.isFormEndpoint) { 
+			clientFunctionName = `${this.method}FormData`; 
+		}
 		const hasRequest = !!this.requestComponent || this.hasPathParams || this.hasQueryParams;
 
 		if (this.hasPathParams) {

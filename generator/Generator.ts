@@ -100,8 +100,31 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
-
-					if (!schemaRef) continue;
+					if (!schemaRef) { 
+						if (contentType === "multipart/form-data") { 
+							// process form data here 
+							const operationName = operation["operationId"];
+							const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}RequestFormData`;
+							iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+							requestComponents.set(formSchemaName, new RequestComponent({
+								componentType: EComponentType.Request,
+								name: formSchemaName,
+								properties: Object.entries<any>(content["schema"]["properties"]).map(
+									([propertyName, property]) => {
+										return new Property({
+											name: propertyName,
+											type: property["type"],
+											nullable: property["nullable"] || false,
+											format: property["format"],
+											referenceIsEnum: false,
+										});
+									}
+								),
+								requiredProperties: content["schema"]["required"] || [],
+							}));
+						}
+						continue; 
+					} 
 					const schemaName = schemaRef.split("/").pop();
 					iLog(
 						1,

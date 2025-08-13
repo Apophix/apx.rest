@@ -164,6 +164,33 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
+	public async postFormData<T>(path: string, formData: FormData, options?: TApiRequestOptions): Promise<TApiResponse<T>> { 
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		headers["Content-Type"] = "multipart/form-data"; 
+
+		const response = await fetch(url, {
+			method: "POST",
+			headers,
+			body: formData,
+		}); 
+
+		if (!response.ok) { 
+			return { data: undefined, response }
+		}
+
+		let data: T | undefined;
+		if (!options.skipJsonParsing) {
+			const text = await response.text();
+			if (text) {
+				data = JSON.parse(text) as T;
+			}
+		}
+
+		return { data, response };
+	}
+
 	public async put<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);

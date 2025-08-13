@@ -13,6 +13,7 @@ const requestComponents = new Map();
 const responseComponents = new Map();
 const modelComponents = new Map();
 const enumNames = new Set();
+const endpointToFormRequestNameMap = new Map();
 export class Generator {
     async generate() {
         log(chalk.blueBright("Looking for apx-rest-config.json..."));
@@ -27,6 +28,7 @@ export class Generator {
             responseComponents.clear();
             modelComponents.clear();
             enumNames.clear();
+            endpointToFormRequestNameMap.clear();
             log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
             await this.generateApi(configProvider);
         }
@@ -82,7 +84,7 @@ export class Generator {
                         if (contentType === "multipart/form-data") {
                             // process form data here 
                             const operationName = operation["operationId"];
-                            const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}RequestFormData`;
+                            const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}FormDataRequest`;
                             iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
                             requestComponents.set(formSchemaName, new RequestComponent({
                                 componentType: EComponentType.Request,
@@ -98,6 +100,8 @@ export class Generator {
                                 }),
                                 requiredProperties: content["schema"]["required"] || [],
                             }));
+                            // TODO: establish mapping of endpointName -> FormRequest Schema for later generation use
+                            endpointToFormRequestNameMap.set(operationName, formSchemaName);
                         }
                         continue;
                     }
@@ -263,13 +267,18 @@ export class Generator {
                     : {};
                 const responseContents = operation.responses;
                 const responseInnerContents = Array.from(Object.values(responseContents))[0];
+                const formRequest = endpointToFormRequestNameMap.get(operation.operationId);
+                let requestComponentName = requestInnerContents.schema?.$ref?.split("/").pop();
+                if (formRequest) {
+                    requestComponentName = formRequest;
+                }
                 // TODO: add query parameters here
                 paths.push(new ApiPath({
                     endpoint,
                     method,
                     parameters: operation.parameters,
                     operationId: operation.operationId,
-                    requestComponentName: requestInnerContents?.schema?.$ref?.split("/").pop(),
+                    requestComponentName: requestComponentName,
                     responseComponentName: responseInnerContents.content?.["application/json"]?.schema?.$ref
                         ?.split("/")
                         .pop(),

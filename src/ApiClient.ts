@@ -53,7 +53,7 @@ export abstract class ApiClient {
 		}
 	}
 
-	private async buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>> {
+	protected async buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>> {
 		const headers = options?.requestHeaders || {};
 		for (const [key, value] of Object.entries(this.basicHeaders)) {
 			headers[key] = value;
@@ -86,7 +86,7 @@ export abstract class ApiClient {
 		return headers;
 	}
 
-	private buildRequestOptions(options?: TApiRequestOptions): TApiRequestOptions {
+	protected buildRequestOptions(options?: TApiRequestOptions): TApiRequestOptions {
 		if (!options) options = {};
 
 		if (options.requestHeaders) {
@@ -169,8 +169,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
 
-		// ensure Content-Type is not set (browser will automatically set it)
-		delete headers["Content-Type"];
+		console.log("postFormData headers", headers);
 
 		const response = await fetch(url, {
 			method: "POST",

@@ -138,8 +138,7 @@ export class ApiClient {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
         const headers = await this.buildHeaders(options);
-        // ensure Content-Type is not set (browser will automatically set it)
-        delete headers["Content-Type"];
+        console.log("postFormData headers", headers);
         const response = await fetch(url, {
             method: "POST",
             headers,

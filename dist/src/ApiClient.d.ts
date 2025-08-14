@@ -16,8 +16,8 @@ export declare abstract class ApiClient {
     useBearerTokenProvider(provider: () => Promise<string>): void;
     useBearerTokenByDefault(value: boolean): void;
     setHeader(key: string, value: string, headerType?: HeaderType): void;
-    private buildHeaders;
-    private buildRequestOptions;
+    protected buildHeaders(options?: TApiRequestOptions): Promise<Record<string, string>>;
+    protected buildRequestOptions(options?: TApiRequestOptions): TApiRequestOptions;
     get<T>(path: string, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     post<T>(path: string, body: unknown, options?: TApiRequestOptions): Promise<TApiResponse<T>>;
     postFormData<T>(path: string, formData: FormData, options?: TApiRequestOptions): Promise<TApiResponse<T>>;

@@ -169,8 +169,6 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
 
-		console.log("postFormData headers", headers);
-
 		const response = await fetch(url, {
 			method: "POST",
 			headers,

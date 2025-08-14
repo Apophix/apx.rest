@@ -138,7 +138,8 @@ export class ApiClient {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
         const headers = await this.buildHeaders(options);
-        headers["Content-Type"] = "multipart/form-data";
+        // ensure Content-Type is not set (browser will automatically set it)
+        delete headers["Content-Type"];
         const response = await fetch(url, {
             method: "POST",
             headers,

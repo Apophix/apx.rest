@@ -619,7 +619,7 @@ class ApiPath implements TApiPathDto {
 				ret += `\t\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
 			}
 		}
-		ret += `\t\tconst { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);`
+		ret += `\t\tconst { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`${this.requestStr}, options);\n`
 		ret += "\t\tif (!response.ok || !data) {\n"
 		ret += `\t\t\treturn [null, response];\n`;
 		ret += `\t\t}\n`;

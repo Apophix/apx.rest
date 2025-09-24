@@ -681,7 +681,7 @@ class RequestComponent extends Component {
     render() {
         let str = `export type T${this.name} = { \n`;
         for (const property of this.properties) {
-            str += `\t${property.render()}\n`;
+            str += `\t${property.render(true)}\n`;
         }
         str += `};`;
         return str;
@@ -790,8 +790,9 @@ class Property {
         }
         return this.type;
     }
-    render() {
-        return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedType};`;
+    render(isRequest = false) {
+        const prefix = isRequest && this.referenceComponentName ? "T" : "";
+        return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
     }
     renderAsDto() {
         return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;

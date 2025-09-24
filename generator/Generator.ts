@@ -1036,7 +1036,10 @@ class Property implements TPropertyDto {
 	}
 
 	public render(isRequest: boolean = false): string {
-		const prefix = isRequest && this.referenceComponentName && !this.referenceIsEnum ? "T" : "";
+		let prefix = isRequest && this.referenceComponentName && !this.referenceIsEnum ? "T" : "";
+		if (this.isArray && this.items?.referenceComponentName && !this.items?.referenceIsEnum) {
+			prefix = "T";
+		}
 		return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
 	}
 

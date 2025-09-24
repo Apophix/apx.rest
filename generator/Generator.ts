@@ -894,14 +894,14 @@ class Component implements TComponentDto {
 class ModelComponent extends Component {}
 
 class RequestComponent extends Component {
-	public override render(): string {
-		let str = `export type T${this.name} = { \n`;
-		for (const property of this.properties) {
-			str += `\t${property.render(true)}\n`;
-		}
-		str += `};`;
-		return str;
-	}
+	// public override render(): string {
+	// 	let str = `export type T${this.name} = { \n`;
+	// 	for (const property of this.properties) {
+	// 		str += `\t${property.render(true)}\n`;
+	// 	}
+	// 	str += `};`;
+	// 	return str;
+	// }
 
 	public override get dtoName(): string {
 		return `T${this.capitalizedName}`;
@@ -1036,11 +1036,7 @@ class Property implements TPropertyDto {
 	}
 
 	public render(isRequest: boolean = false): string {
-		let prefix = isRequest && this.referenceComponentName && !this.referenceIsEnum ? "T" : "";
-		if (this.isArray && this.items?.referenceComponentName && !this.items?.referenceIsEnum) {
-			prefix = "T";
-		}
-		return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
+		return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedType};`;
 	}
 
 	public renderAsDto(): string {

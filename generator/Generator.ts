@@ -897,7 +897,7 @@ class RequestComponent extends Component {
 	public override render(): string {
 		let str = `export type T${this.name} = { \n`;
 		for (const property of this.properties) {
-			str += `\t${property.render()}\n`;
+			str += `\t${property.render(true)}\n`;
 		}
 		str += `};`;
 		return str;
@@ -1035,8 +1035,9 @@ class Property implements TPropertyDto {
 		return this.type;
 	}
 
-	public render(): string {
-		return `${this.name}${this.nullable ? "?" : ""}: ${this.formattedType};`;
+	public render(isRequest: boolean = false): string {
+		const prefix = isRequest && this.referenceComponentName ? "T" : "";
+		return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
 	}
 
 	public renderAsDto(): string {

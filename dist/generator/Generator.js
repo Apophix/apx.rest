@@ -678,14 +678,14 @@ class Component {
 class ModelComponent extends Component {
 }
 class RequestComponent extends Component {
-    // public override render(): string {
-    // 	let str = `export type T${this.name} = { \n`;
-    // 	for (const property of this.properties) {
-    // 		str += `\t${property.render(true)}\n`;
-    // 	}
-    // 	str += `};`;
-    // 	return str;
-    // }
+    render() {
+        let str = `export type T${this.name} = { \n`;
+        for (const property of this.properties) {
+            str += `\t${property.render(true)}\n`;
+        }
+        str += `};`;
+        return str;
+    }
     get dtoName() {
         return `T${this.capitalizedName}`;
     }

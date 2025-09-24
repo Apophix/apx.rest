@@ -894,14 +894,14 @@ class Component implements TComponentDto {
 class ModelComponent extends Component {}
 
 class RequestComponent extends Component {
-	// public override render(): string {
-	// 	let str = `export type T${this.name} = { \n`;
-	// 	for (const property of this.properties) {
-	// 		str += `\t${property.render(true)}\n`;
-	// 	}
-	// 	str += `};`;
-	// 	return str;
-	// }
+	public override render(): string {
+		let str = `export type T${this.name} = { \n`;
+		for (const property of this.properties) {
+			str += `\t${property.render(true)}\n`;
+		}
+		str += `};`;
+		return str;
+	}
 
 	public override get dtoName(): string {
 		return `T${this.capitalizedName}`;

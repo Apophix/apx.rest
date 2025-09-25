@@ -214,8 +214,6 @@ export class ApiClient {
         if (!body) {
             delete headers["Content-Type"];
         }
-        console.log("Headers for DELETE request:", headers);
-        console.log("Body for DELETE request:", body);
         const response = await fetch(url, {
             method: "DELETE",
             body: body ? JSON.stringify(body) : undefined,

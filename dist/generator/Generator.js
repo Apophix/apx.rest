@@ -409,6 +409,9 @@ class ApiPath {
         return endpoint;
     }
     get shouldSkipRequest() {
+        // if there are _only_ path params, skip: 
+        if (!this.requestComponent && this.hasPathParams)
+            return true;
         const hasRequest = !!this.requestComponent || this.hasPathParams;
         return !!(hasRequest &&
             this.requestComponent &&
@@ -418,8 +421,8 @@ class ApiPath {
         if (this.method === "get")
             return "";
         if (!this.requestComponent)
-            return "";
-        return this.shouldSkipRequest ? ", {}" : ", request";
+            return ", undefined";
+        return this.shouldSkipRequest ? ", undefined" : ", request";
     }
     renderRequestAndStreamedResponse(requestDtoName, responseDtoName, finalResponse, clientFunctionName) {
         return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): AsyncGenerator<${finalResponse}> {

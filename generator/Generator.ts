@@ -535,6 +535,9 @@ class ApiPath implements TApiPathDto {
 	}
 
 	public get shouldSkipRequest(): boolean {
+		// if there are _only_ path params, skip: 
+		if (!this.requestComponent && this.hasPathParams) return true;
+
 		const hasRequest = !!this.requestComponent || this.hasPathParams;
 
 		return !!(
@@ -547,9 +550,9 @@ class ApiPath implements TApiPathDto {
 	public get requestStr(): string {
 		if (this.method === "get") return "";
 
-		if (!this.requestComponent) return "";
+		if (!this.requestComponent) return ", undefined";
 
-		return this.shouldSkipRequest ? ", {}" : ", request";
+		return this.shouldSkipRequest ? ", undefined" : ", request";
 	}
 
 	private renderRequestAndStreamedResponse(

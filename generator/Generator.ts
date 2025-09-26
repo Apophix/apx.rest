@@ -594,6 +594,7 @@ class ApiPath implements TApiPathDto {
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
+		const bodyVar = this.method === "get" ? "" : "undefined, ";
 		return `public async ${
 			this.clientMethodName
 		}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
@@ -605,7 +606,7 @@ class ApiPath implements TApiPathDto {
 			.join("\n\t\t")}
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`${this.requestStr}, options);
+		}\`${this.requestStr}, ${bodyVar}options);
 
 		return [null, response];
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines

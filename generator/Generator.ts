@@ -616,7 +616,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
-		const bodyVar = this.clientMethodName === "get" ? "" : "undefined, "; 
+		const bodyVar = this.method === "get" ? "" : "undefined, "; 
 		return `public async ${
 			this.clientMethodName
 		}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {

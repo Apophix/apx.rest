@@ -627,7 +627,7 @@ class ApiPath implements TApiPathDto {
 			.join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`, options);
+		}\`, undefined, options);
 
 		if (!response.ok || !data) {
 			return [null, response];

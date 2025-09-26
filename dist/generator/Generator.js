@@ -467,7 +467,7 @@ class ApiPath {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, options);
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, undefined, options);
 
 		if (!response.ok || !data) {
 			return [null, response];

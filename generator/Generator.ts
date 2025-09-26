@@ -616,6 +616,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
+		const bodyVar = this.clientMethodName === "get" ? "" : "undefined, "; 
 		return `public async ${
 			this.clientMethodName
 		}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
@@ -627,7 +628,7 @@ class ApiPath implements TApiPathDto {
 			.join("\n\t\t")}
 		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
 			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`, undefined, options);
+		}\`, ${bodyVar}options);
 
 		if (!response.ok || !data) {
 			return [null, response];

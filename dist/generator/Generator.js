@@ -460,6 +460,7 @@ class ApiPath {
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
     }
     renderResponseOnly(responseDtoName, clientFunctionName, finalResponse) {
+        const bodyVar = this.clientMethodName === "get" ? "" : "undefined, ";
         return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
@@ -467,7 +468,7 @@ class ApiPath {
             return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
         })
             .join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, undefined, options);
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""}\`, ${bodyVar}options);
 
 		if (!response.ok || !data) {
 			return [null, response];

@@ -961,8 +961,8 @@ class ResponseComponent extends Component {
 
 		return `public switch(
 ${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
-		) : void { 
-${this.properties.map((property) => `\tif (this.${property.name} !== undefined) {
+) : void { 
+	${this.properties.map((property) => `\tif (this.${property.name} !== undefined) {
 			${property.name}(this.${property.name});
 			return;
 		}`).join("\n")}

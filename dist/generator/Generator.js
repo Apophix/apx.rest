@@ -737,15 +737,18 @@ class ResponseComponent extends Component {
     renderAdditionalMethods() {
         if (!this.isUnionType)
             return null;
-        return `public switch(
+        let r = `public switch(
 ${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
-) : void { 
-	${this.properties.map((property) => `\tif (this.${property.name} !== undefined) {
-			${property.name}(this.${property.name});
-			return;
-		}`).join("\n")}
-		throw new Error("No matching type in union"); 
-}`;
+) : void {\n`;
+        for (const property of this.properties) {
+            r += `\tif (this.${property.name} !== undefined) {\n`;
+            r += `\t\t${property.name}(this.${property.name});\n`;
+            r += `\t\treturn;\n`;
+            r += `\t}\n`;
+        }
+        r += `\tthrow new Error("No matching type in union");\n`;
+        r += `\n}`;
+        return r;
     }
 }
 class Property {

@@ -16,6 +16,7 @@ const requestComponents = new Map<string, RequestComponent>();
 const responseComponents = new Map<string, ResponseComponent>();
 const modelComponents = new Map<string, ModelComponent>();
 const enumNames = new Set<string>();
+const responsesMarkedAsUnions = new Set<string>();
 
 export class Generator {
 	public async generate(): Promise<void> {
@@ -34,6 +35,7 @@ export class Generator {
 			responseComponents.clear();
 			modelComponents.clear();
 			enumNames.clear();
+			responsesMarkedAsUnions.clear();
 			log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
 			await this.generateApi(configProvider);
 		}
@@ -84,6 +86,9 @@ export class Generator {
 							)
 						);
 						responseNames.add(schemaName);
+
+						if (operation["x-union-response"]) 
+							responsesMarkedAsUnions.add(schemaName);
 					}
 				}
 
@@ -870,10 +875,22 @@ class Component implements TComponentDto {
 			}
 			str += `\n\t\tthis.${property.name} = dto.${property.name};`;
 		}
-		str += `
-	}
-}`;
+		const additionalMethods = this.renderAdditionalMethods();
+		if (additionalMethods) {
+			str += `
+		}`; 
+			str += `\n${additionalMethods}\n`;
+		} else {
+			str += `
+		}
+	}`;
+		}
+
 		return str;
+	}
+
+	protected renderAdditionalMethods(): string | null { 
+		return null; 
 	}
 
 	protected renderDto(): string {
@@ -913,7 +930,19 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component {}
+class ResponseComponent extends Component {
+	public get isUnionType() : boolean { 
+		return responsesMarkedAsUnions.has(this.name);
+	}
+
+	protected override renderAdditionalMethods(): string | null {
+		if (!this.isUnionType) return null;
+
+		return `public hello() : void { 
+	console.log("This is a union type response"); 
+}`;
+	}
+}
 
 type TPropertyDto = {
 	name: string;

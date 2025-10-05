@@ -13,6 +13,7 @@ const requestComponents = new Map();
 const responseComponents = new Map();
 const modelComponents = new Map();
 const enumNames = new Set();
+const responsesMarkedAsUnions = new Set();
 export class Generator {
     async generate() {
         log(chalk.blueBright("Looking for apx-rest-config.json..."));
@@ -27,6 +28,7 @@ export class Generator {
             responseComponents.clear();
             modelComponents.clear();
             enumNames.clear();
+            responsesMarkedAsUnions.clear();
             log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
             await this.generateApi(configProvider);
         }
@@ -65,6 +67,8 @@ export class Generator {
                         const schemaName = schemaRef.split("/").pop();
                         iLog(1, chalk.cyanBright(`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
                         responseNames.add(schemaName);
+                        if (operation["x-union-response"])
+                            responsesMarkedAsUnions.add(schemaName);
                     }
                 }
                 const requestBody = operation["requestBody"];
@@ -657,10 +661,21 @@ class Component {
             }
             str += `\n\t\tthis.${property.name} = dto.${property.name};`;
         }
-        str += `
-	}
-}`;
+        const additionalMethods = this.renderAdditionalMethods();
+        if (additionalMethods) {
+            str += `
+		}`;
+            str += `\n${additionalMethods}\n`;
+        }
+        else {
+            str += `
+		}
+	}`;
+        }
         return str;
+    }
+    renderAdditionalMethods() {
+        return null;
     }
     renderDto() {
         let str = `export type ${this.dtoName} = { \n`;
@@ -696,6 +711,16 @@ class RequestComponent extends Component {
     }
 }
 class ResponseComponent extends Component {
+    get isUnionType() {
+        return responsesMarkedAsUnions.has(this.name);
+    }
+    renderAdditionalMethods() {
+        if (!this.isUnionType)
+            return null;
+        return `public hello() : void { 
+	console.log("This is a union type response"); 
+}`;
+    }
 }
 class Property {
     name;

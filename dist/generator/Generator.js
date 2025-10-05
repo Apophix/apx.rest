@@ -670,13 +670,13 @@ class Component {
                 .split("\n")
                 .map((line) => `\t${line}`)
                 .join("\n");
-            str += `\n${additionalMethods}\n`;
+            str += `\n${additionalMethods}`;
             str += `\n}`;
         }
         else {
             str += `
-		}
-	}`;
+	}
+}`;
         }
         return str;
     }

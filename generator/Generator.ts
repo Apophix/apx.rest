@@ -960,9 +960,13 @@ class ResponseComponent extends Component {
 		if (!this.isUnionType) return null;
 
 		return `public switch(
-	${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
+${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
 		) : void { 
-	console.log("This is a union type response"); 
+${this.properties.map((property) => `\tif (this.${property.name} !== undefined) {
+			${property.name}(this.${property.name});
+			return;
+		}`).join("\n")}
+		throw new Error("No matching type in union"); 
 }`;
 	}
 }

@@ -941,10 +941,27 @@ class ResponseComponent extends Component {
 		return responsesMarkedAsUnions.has(this.name);
 	}
 
+	// public switch(
+	// 	mealConceptResponse: (mealConceptResponse: MealConceptResponse) => void, 
+	// 	mealCompositionResponse: (mealCompositionResponse: MealCompositionResponse) => void,
+	// ) : void { 
+	// 	if (this.mealConceptResponse !== undefined) {
+	// 		mealConceptResponse(this.mealConceptResponse);
+	// 		return;
+	// 	}
+	// 	if (this.mealCompositionResponse !== undefined) {
+	// 		mealCompositionResponse(this.mealCompositionResponse);
+	// 		return;
+	// 	}
+	// 	throw new Error("No matching type in union");
+	// }
+
 	protected override renderAdditionalMethods(): string | null {
 		if (!this.isUnionType) return null;
 
-		return `public hello() : void { 
+		return `public switch(
+	${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
+		) : void { 
 	console.log("This is a union type response"); 
 }`;
 	}

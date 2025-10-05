@@ -878,8 +878,9 @@ class Component implements TComponentDto {
 		const additionalMethods = this.renderAdditionalMethods();
 		if (additionalMethods) {
 			str += `
-		}`; 
+	}`; 
 			str += `\n${additionalMethods}\n`;
+			str += `\n\t}`;
 		} else {
 			str += `
 		}

@@ -664,8 +664,9 @@ class Component {
         const additionalMethods = this.renderAdditionalMethods();
         if (additionalMethods) {
             str += `
-		}`;
+	}`;
             str += `\n${additionalMethods}\n`;
+            str += `\n\t}`;
         }
         else {
             str += `

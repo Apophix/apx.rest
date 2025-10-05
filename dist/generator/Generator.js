@@ -748,7 +748,7 @@ ${this.properties.map((property) => `\t${property.name}: (value: ${property.form
         }
         r += `\tthrow new Error("No matching type in union");\n`;
         r += `}\n`;
-        r += `public match<TResult>(`;
+        r += `public match<TResult>(\n`;
         r += this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => TResult`).join(",\n");
         r += `\n) : TResult {\n`;
         for (const property of this.properties) {

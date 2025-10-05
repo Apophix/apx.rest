@@ -661,12 +661,17 @@ class Component {
             }
             str += `\n\t\tthis.${property.name} = dto.${property.name};`;
         }
-        const additionalMethods = this.renderAdditionalMethods();
+        let additionalMethods = this.renderAdditionalMethods();
         if (additionalMethods) {
             str += `
 	}`;
+            // add a tab before each line of additionalMethods
+            additionalMethods = additionalMethods
+                .split("\n")
+                .map((line) => `\t${line}`)
+                .join("\n");
             str += `\n${additionalMethods}\n`;
-            str += `\n\t}`;
+            str += `\n}`;
         }
         else {
             str += `

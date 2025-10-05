@@ -747,7 +747,7 @@ ${this.properties.map((property) => `\t${property.name}: (value: ${property.form
             r += `\t}\n`;
         }
         r += `\tthrow new Error("No matching type in union");\n`;
-        r += `\n}`;
+        r += `}\n`;
         return r;
     }
 }

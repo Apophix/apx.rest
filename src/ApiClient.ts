@@ -140,7 +140,7 @@ export abstract class ApiClient {
 		options = this.buildRequestOptions(options);
 		const bodyJson = JSON.stringify(body);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"]) {
+		if (!headers["Content-Type"] && !!body) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {
@@ -195,7 +195,7 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"]) {
+		if (!headers["Content-Type"] && !!body) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {
@@ -227,7 +227,7 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"]) {
+		if (!headers["Content-Type"] && !!body) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {

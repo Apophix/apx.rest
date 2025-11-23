@@ -138,9 +138,9 @@ export abstract class ApiClient {
 	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
-		const bodyJson = JSON.stringify(body);
+		const bodyJson = JSON.stringify(body ?? {});
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"] && !!body) {
+		if (!headers["Content-Type"]) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {
@@ -195,13 +195,13 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"] && !!body) {
+		if (!headers["Content-Type"]) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {
 			method: "PUT",
 			headers,
-			body: JSON.stringify(body),
+			body: JSON.stringify(body ?? {}),
 		});
 
 		if (!response.ok) {
@@ -227,13 +227,13 @@ export abstract class ApiClient {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
-		if (!headers["Content-Type"] && !!body) {
+		if (!headers["Content-Type"]) {
 			headers["Content-Type"] = "application/json";
 		}
 		const response = await fetch(url, {
 			method: "PATCH",
 			headers,
-			body: JSON.stringify(body),
+			body: JSON.stringify(body ?? {}),
 		});
 
 		if (!response.ok) {

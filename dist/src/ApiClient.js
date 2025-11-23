@@ -112,9 +112,9 @@ export class ApiClient {
     async post(path, body, options) {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
-        const bodyJson = JSON.stringify(body);
+        const bodyJson = JSON.stringify(body ?? {});
         const headers = await this.buildHeaders(options);
-        if (!headers["Content-Type"] && !!body) {
+        if (!headers["Content-Type"]) {
             headers["Content-Type"] = "application/json";
         }
         const response = await fetch(url, {
@@ -160,13 +160,13 @@ export class ApiClient {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
         const headers = await this.buildHeaders(options);
-        if (!headers["Content-Type"] && !!body) {
+        if (!headers["Content-Type"]) {
             headers["Content-Type"] = "application/json";
         }
         const response = await fetch(url, {
             method: "PUT",
             headers,
-            body: JSON.stringify(body),
+            body: JSON.stringify(body ?? {}),
         });
         if (!response.ok) {
             return { data: undefined, response };
@@ -184,13 +184,13 @@ export class ApiClient {
         const url = this.buildUrl(path);
         options = this.buildRequestOptions(options);
         const headers = await this.buildHeaders(options);
-        if (!headers["Content-Type"] && !!body) {
+        if (!headers["Content-Type"]) {
             headers["Content-Type"] = "application/json";
         }
         const response = await fetch(url, {
             method: "PATCH",
             headers,
-            body: JSON.stringify(body),
+            body: JSON.stringify(body ?? {}),
         });
         if (!response.ok) {
             return { data: undefined, response };

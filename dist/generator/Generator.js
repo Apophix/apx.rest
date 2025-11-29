@@ -84,9 +84,11 @@ export class Generator {
                     const schemaRef = content["schema"]["$ref"];
                     if (!schemaRef) {
                         if (contentType === "multipart/form-data") {
-                            // process form data here 
+                            // process form data here
                             const operationName = operation["operationId"];
-                            const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}RequestFormData`;
+                            const formSchemaName = `${operationName
+                                .charAt(0)
+                                .toUpperCase()}${operationName.slice(1)}RequestFormData`;
                             iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
                             requestComponents.set(formSchemaName, new RequestComponent({
                                 componentType: EComponentType.Request,
@@ -413,7 +415,7 @@ class ApiPath {
         return endpoint;
     }
     get shouldSkipRequest() {
-        // if there are _only_ path params, skip: 
+        // if there are _only_ path params, skip:
         if (!this.requestComponent && this.hasPathParams)
             return true;
         const hasRequest = !!this.requestComponent || this.hasPathParams;
@@ -653,7 +655,10 @@ class Component {
                         continue;
                     }
                 }
-                if (!!property.additionalProperties?.formattedType)
+                if (!!property.additionalProperties?.formattedType &&
+                    !property.additionalProperties.formattedType.startsWith("string") &&
+                    !property.additionalProperties.formattedType.startsWith("number") &&
+                    !property.additionalProperties.formattedType.startsWith("boolean"))
                     str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
                 else
                     str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value]));`;
@@ -721,9 +726,9 @@ class ResponseComponent extends Component {
         return responsesMarkedAsUnions.has(this.name);
     }
     // public switch(
-    // 	mealConceptResponse: (mealConceptResponse: MealConceptResponse) => void, 
+    // 	mealConceptResponse: (mealConceptResponse: MealConceptResponse) => void,
     // 	mealCompositionResponse: (mealCompositionResponse: MealCompositionResponse) => void,
-    // ) : void { 
+    // ) : void {
     // 	if (this.mealConceptResponse !== undefined) {
     // 		mealConceptResponse(this.mealConceptResponse);
     // 		return;
@@ -738,7 +743,9 @@ class ResponseComponent extends Component {
         if (!this.isUnionType)
             return null;
         let r = `public switch(
-${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
+${this.properties
+            .map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`)
+            .join(",\n")}		
 ) : void {\n`;
         for (const property of this.properties) {
             r += `\tif (this.${property.name} !== undefined) {\n`;
@@ -749,7 +756,9 @@ ${this.properties.map((property) => `\t${property.name}: (value: ${property.form
         r += `\tthrow new Error("No matching type in union");\n`;
         r += `}\n`;
         r += `public match<TResult>(\n`;
-        r += this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => TResult`).join(",\n");
+        r += this.properties
+            .map((property) => `\t${property.name}: (value: ${property.formattedType}) => TResult`)
+            .join(",\n");
         r += `\n) : TResult {\n`;
         for (const property of this.properties) {
             r += `\tif (this.${property.name} !== undefined) {\n`;
@@ -861,9 +870,16 @@ class Property {
     }
     render(isRequest = false) {
         let prefix = "";
-        if (isRequest && this.referenceComponentName && !this.referenceIsEnum && requestComponents.has(this.referenceComponentName))
+        if (isRequest &&
+            this.referenceComponentName &&
+            !this.referenceIsEnum &&
+            requestComponents.has(this.referenceComponentName))
             prefix = "T";
-        if (isRequest && this.isArray && this.items?.referenceComponentName && !this.items?.referenceIsEnum && requestComponents.has(this.items?.referenceComponentName))
+        if (isRequest &&
+            this.isArray &&
+            this.items?.referenceComponentName &&
+            !this.items?.referenceIsEnum &&
+            requestComponents.has(this.items?.referenceComponentName))
             prefix = "T";
         return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
     }

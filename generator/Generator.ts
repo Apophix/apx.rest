@@ -87,8 +87,7 @@ export class Generator {
 						);
 						responseNames.add(schemaName);
 
-						if (operation["x-union-response"]) 
-							responsesMarkedAsUnions.add(schemaName);
+						if (operation["x-union-response"]) responsesMarkedAsUnions.add(schemaName);
 					}
 				}
 
@@ -105,31 +104,41 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
-					if (!schemaRef) { 
-						if (contentType === "multipart/form-data") { 
-							// process form data here 
+					if (!schemaRef) {
+						if (contentType === "multipart/form-data") {
+							// process form data here
 							const operationName = operation["operationId"];
-							const formSchemaName = `${operationName.charAt(0).toUpperCase()}${operationName.slice(1)}RequestFormData`;
-							iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
-							requestComponents.set(formSchemaName, new RequestComponent({
-								componentType: EComponentType.Request,
-								name: formSchemaName,
-								properties: Object.entries<any>(content["schema"]["properties"]).map(
-									([propertyName, property]) => {
-										return new Property({
-											name: propertyName,
-											type: property["type"],
-											nullable: property["nullable"] || false,
-											format: property["format"],
-											referenceIsEnum: false,
-										});
-									}
-								),
-								requiredProperties: content["schema"]["required"] || [],
-							}));
+							const formSchemaName = `${operationName
+								.charAt(0)
+								.toUpperCase()}${operationName.slice(1)}RequestFormData`;
+							iLog(
+								1,
+								chalk.cyanBright(
+									`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+								)
+							);
+							requestComponents.set(
+								formSchemaName,
+								new RequestComponent({
+									componentType: EComponentType.Request,
+									name: formSchemaName,
+									properties: Object.entries<any>(content["schema"]["properties"]).map(
+										([propertyName, property]) => {
+											return new Property({
+												name: propertyName,
+												type: property["type"],
+												nullable: property["nullable"] || false,
+												format: property["format"],
+												referenceIsEnum: false,
+											});
+										}
+									),
+									requiredProperties: content["schema"]["required"] || [],
+								})
+							);
 						}
-						continue; 
-					} 
+						continue;
+					}
 					const schemaName = schemaRef.split("/").pop();
 					iLog(
 						1,
@@ -540,7 +549,7 @@ class ApiPath implements TApiPathDto {
 	}
 
 	public get shouldSkipRequest(): boolean {
-		// if there are _only_ path params, skip: 
+		// if there are _only_ path params, skip:
 		if (!this.requestComponent && this.hasPathParams) return true;
 
 		const hasRequest = !!this.requestComponent || this.hasPathParams;
@@ -624,7 +633,7 @@ class ApiPath implements TApiPathDto {
 		clientFunctionName: string,
 		finalResponse: string
 	): string {
-		const bodyVar = this.method === "get" ? "" : "undefined, "; 
+		const bodyVar = this.method === "get" ? "" : "undefined, ";
 		return `public async ${
 			this.clientMethodName
 		}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
@@ -647,7 +656,7 @@ class ApiPath implements TApiPathDto {
 	}
 
 	private renderNoRequestNoResponse(clientFunctionName: string): string {
-		const bodyVar = this.method === "get" ? "" : "undefined, "; 
+		const bodyVar = this.method === "get" ? "" : "undefined, ";
 		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}\`, ${bodyVar}options);
 
@@ -866,7 +875,12 @@ class Component implements TComponentDto {
 						continue;
 					}
 				}
-				if (!!property.additionalProperties?.formattedType)
+				if (
+					!!property.additionalProperties?.formattedType &&
+					!property.additionalProperties.formattedType.startsWith("string") &&
+					!property.additionalProperties.formattedType.startsWith("number") &&
+					!property.additionalProperties.formattedType.startsWith("boolean")
+				)
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, new ${property.additionalProperties?.formattedType}(value)]));`;
 				else
 					str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value]));`;
@@ -878,7 +892,7 @@ class Component implements TComponentDto {
 		let additionalMethods = this.renderAdditionalMethods();
 		if (additionalMethods) {
 			str += `
-	}`; 
+	}`;
 			// add a tab before each line of additionalMethods
 			additionalMethods = additionalMethods
 				.split("\n")
@@ -895,8 +909,8 @@ class Component implements TComponentDto {
 		return str;
 	}
 
-	protected renderAdditionalMethods(): string | null { 
-		return null; 
+	protected renderAdditionalMethods(): string | null {
+		return null;
 	}
 
 	protected renderDto(): string {
@@ -937,14 +951,14 @@ class RequestComponent extends Component {
 }
 
 class ResponseComponent extends Component {
-	public get isUnionType() : boolean { 
+	public get isUnionType(): boolean {
 		return responsesMarkedAsUnions.has(this.name);
 	}
 
 	// public switch(
-	// 	mealConceptResponse: (mealConceptResponse: MealConceptResponse) => void, 
+	// 	mealConceptResponse: (mealConceptResponse: MealConceptResponse) => void,
 	// 	mealCompositionResponse: (mealCompositionResponse: MealCompositionResponse) => void,
-	// ) : void { 
+	// ) : void {
 	// 	if (this.mealConceptResponse !== undefined) {
 	// 		mealConceptResponse(this.mealConceptResponse);
 	// 		return;
@@ -960,10 +974,12 @@ class ResponseComponent extends Component {
 		if (!this.isUnionType) return null;
 
 		let r = `public switch(
-${this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`).join(",\n")}		
-) : void {\n`; 
+${this.properties
+	.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`)
+	.join(",\n")}		
+) : void {\n`;
 		for (const property of this.properties) {
-			r += `\tif (this.${property.name} !== undefined) {\n`; 
+			r += `\tif (this.${property.name} !== undefined) {\n`;
 			r += `\t\t${property.name}(this.${property.name});\n`;
 			r += `\t\treturn;\n`;
 			r += `\t}\n`;
@@ -972,11 +988,13 @@ ${this.properties.map((property) => `\t${property.name}: (value: ${property.form
 		r += `\tthrow new Error("No matching type in union");\n`;
 		r += `}\n`;
 
-		r += `public match<TResult>(\n`; 
-		r += this.properties.map((property) => `\t${property.name}: (value: ${property.formattedType}) => TResult`).join(",\n");
+		r += `public match<TResult>(\n`;
+		r += this.properties
+			.map((property) => `\t${property.name}: (value: ${property.formattedType}) => TResult`)
+			.join(",\n");
 		r += `\n) : TResult {\n`;
 		for (const property of this.properties) {
-			r += `\tif (this.${property.name} !== undefined) {\n`; 
+			r += `\tif (this.${property.name} !== undefined) {\n`;
 			r += `\t\treturn ${property.name}(this.${property.name});\n`;
 			r += `\t}\n`;
 		}
@@ -1112,10 +1130,21 @@ class Property implements TPropertyDto {
 	}
 
 	public render(isRequest: boolean = false): string {
-		let prefix = ""; 
-		if (isRequest && this.referenceComponentName && !this.referenceIsEnum && requestComponents.has(this.referenceComponentName)) 
+		let prefix = "";
+		if (
+			isRequest &&
+			this.referenceComponentName &&
+			!this.referenceIsEnum &&
+			requestComponents.has(this.referenceComponentName)
+		)
 			prefix = "T";
-		if (isRequest && this.isArray && this.items?.referenceComponentName && !this.items?.referenceIsEnum && requestComponents.has(this.items?.referenceComponentName))
+		if (
+			isRequest &&
+			this.isArray &&
+			this.items?.referenceComponentName &&
+			!this.items?.referenceIsEnum &&
+			requestComponents.has(this.items?.referenceComponentName)
+		)
 			prefix = "T";
 		return `${this.name}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
 	}

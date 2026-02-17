@@ -243,6 +243,9 @@ export class Generator {
         outputStr += `// Generated on ${new Date().toISOString()}\n\n`;
         outputStr += `// This file is generated from the OpenAPI document at ${documentUrl}\n\n`;
         outputStr += `// File will be overwritten!!\n\n`;
+        outputStr += `// Use cmd: npx apx-gen to regenerate the file after making changes to the OpenAPI document or after changing generation settings\n\n`;
+        outputStr += `// You can customize the generation with the apx-rest-config.json file. See the documentation for more details.\n\n`;
+        outputStr += "/* eslint-disable */\n\n";
         outputStr +=
             'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
         for (const requestComponent of requestComponents.values()) {

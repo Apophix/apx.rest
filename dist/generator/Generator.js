@@ -184,6 +184,7 @@ export class Generator {
                         if (!type && property["oneOf"]) {
                             const oneOf = property["oneOf"];
                             type = oneOf.find((item) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+                            nullable = nullable || oneOf.some((item) => item["nullable"]);
                         }
                         const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
                             enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
@@ -218,6 +219,7 @@ export class Generator {
                     if (!type && property["oneOf"]) {
                         const oneOf = property["oneOf"];
                         type = oneOf.find((item) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+                        nullable = nullable || oneOf.some((item) => item["nullable"]);
                     }
                     const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
                         enumNames.has(property["items"]?.["$ref"]?.split("/").pop());

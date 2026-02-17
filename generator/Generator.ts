@@ -241,7 +241,7 @@ export class Generator {
 								let type = property["type"];
 								if (!type && property["oneOf"]) {
 									const oneOf = property["oneOf"];
-									type = oneOf[0]["$ref"]?.split("/").pop() || "unknown";
+									type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
 								}
 								const referenceIsEnum =
 									enumNames.has(property["$ref"]?.split("/").pop()) ||
@@ -281,7 +281,7 @@ export class Generator {
 						let type = property["type"];
 						if (!type && property["oneOf"]) {
 							const oneOf = property["oneOf"];
-							type = oneOf[0]["$ref"]?.split("/").pop() || "unknown";
+							type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
 						}
 						const referenceIsEnum =
 							enumNames.has(property["$ref"]?.split("/").pop()) ||

@@ -13,6 +13,7 @@ const requestComponents = new Map();
 const responseComponents = new Map();
 const modelComponents = new Map();
 const enumNames = new Set();
+const responsesMarkedAsUnions = new Set();
 const endpointToFormRequestNameMap = new Map();
 export class Generator {
     async generate() {
@@ -28,6 +29,7 @@ export class Generator {
             responseComponents.clear();
             modelComponents.clear();
             enumNames.clear();
+            responsesMarkedAsUnions.clear();
             endpointToFormRequestNameMap.clear();
             log(chalk.blueBright(`Generating client for API ${i + 1} of ${numConfigs}...`));
             await this.generateApi(configProvider);
@@ -462,10 +464,10 @@ class ApiPath {
         if (this.method === "get")
             return "";
         if (!this.requestComponent)
-            return "";
+            return ", undefined";
         if (this.isFormEndpoint)
             return ", formData";
-        return this.shouldSkipRequest ? ", {}" : ", request";
+        return this.shouldSkipRequest ? ", undefined" : ", request";
     }
     renderRequestAndStreamedResponse(requestDtoName, responseDtoName, finalResponse, clientFunctionName) {
         return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): AsyncGenerator<${finalResponse}> {
@@ -931,8 +933,20 @@ class Property {
     get renderName() {
         return this.isFormField ? this.lowerCamelName : this.name;
     }
-    render() {
-        return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedType};`;
+    render(isRequest = false) {
+        let prefix = "";
+        if (isRequest &&
+            this.referenceComponentName &&
+            !this.referenceIsEnum &&
+            requestComponents.has(this.referenceComponentName))
+            prefix = "T";
+        if (isRequest &&
+            this.isArray &&
+            this.items?.referenceComponentName &&
+            !this.items?.referenceIsEnum &&
+            requestComponents.has(this.items?.referenceComponentName))
+            prefix = "T";
+        return `${this.renderName}${this.nullable ? "?" : ""}: ${prefix}${this.formattedType};`;
     }
     renderAsDto() {
         return `${this.renderName}${this.nullable ? "?" : ""}: ${this.formattedDtoType};`;

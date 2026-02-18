@@ -175,6 +175,7 @@ export class Generator {
                     requiredProperties: schema["required"] || [],
                     properties: Object.entries(schema["properties"]).map(([propertyName, property]) => {
                         let nullable = property["nullable"] || !!property["$ref"] || false;
+                        let refName = property["$ref"];
                         if (schema["required"]) {
                             if (schema["required"].includes(propertyName)) {
                                 nullable = false;
@@ -184,6 +185,7 @@ export class Generator {
                         if (!type && property["oneOf"]) {
                             const oneOf = property["oneOf"];
                             type = oneOf.find((item) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+                            refName = type;
                             nullable = nullable || oneOf.some((item) => item["nullable"]);
                         }
                         const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
@@ -193,7 +195,7 @@ export class Generator {
                             type,
                             nullable: nullable,
                             format: property["format"],
-                            ["$ref"]: property["$ref"],
+                            ["$ref"]: refName,
                             referenceIsEnum,
                             items: property["items"],
                             additionalProperties: property["additionalProperties"],
@@ -210,6 +212,7 @@ export class Generator {
                 componentType: EComponentType.Model,
                 properties: Object.entries(schema["properties"]).map(([propertyName, property]) => {
                     let nullable = property["nullable"] || !!property["$ref"] || false;
+                    let refName = property["$ref"];
                     if (schema["required"]) {
                         if (schema["required"].includes(propertyName)) {
                             nullable = false;
@@ -219,6 +222,7 @@ export class Generator {
                     if (!type && property["oneOf"]) {
                         const oneOf = property["oneOf"];
                         type = oneOf.find((item) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+                        refName = type;
                         nullable = nullable || oneOf.some((item) => item["nullable"]);
                     }
                     const referenceIsEnum = enumNames.has(property["$ref"]?.split("/").pop()) ||
@@ -228,7 +232,7 @@ export class Generator {
                         type,
                         nullable: nullable,
                         format: property["format"],
-                        ["$ref"]: property["$ref"],
+                        ["$ref"]: refName,
                         referenceIsEnum,
                         items: property["items"],
                         additionalProperties: property["additionalProperties"],

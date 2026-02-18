@@ -233,6 +233,7 @@ export class Generator {
 						properties: Object.entries<any>(schema["properties"]).map(
 							([propertyName, property]) => {
 								let nullable = property["nullable"] || !!property["$ref"] || false;
+								let refName = property["$ref"]; 
 								if (schema["required"]) {
 									if (schema["required"].includes(propertyName)) {
 										nullable = false;
@@ -242,6 +243,7 @@ export class Generator {
 								if (!type && property["oneOf"]) {
 									const oneOf = property["oneOf"];
 									type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+									refName = type; 
 									nullable = nullable || oneOf.some((item: any) => item["nullable"]);
 								}
 								const referenceIsEnum =
@@ -252,7 +254,7 @@ export class Generator {
 									type,
 									nullable: nullable,
 									format: property["format"],
-									["$ref"]: property["$ref"],
+									["$ref"]: refName,
 									referenceIsEnum,
 									items: property["items"],
 									additionalProperties: property["additionalProperties"],
@@ -274,6 +276,7 @@ export class Generator {
 					componentType: EComponentType.Model,
 					properties: Object.entries<any>(schema["properties"]).map(([propertyName, property]) => {
 						let nullable = property["nullable"] || !!property["$ref"] || false;
+						let refName = property["$ref"]; 
 						if (schema["required"]) {
 							if (schema["required"].includes(propertyName)) {
 								nullable = false;
@@ -283,6 +286,7 @@ export class Generator {
 						if (!type && property["oneOf"]) {
 							const oneOf = property["oneOf"];
 							type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+							refName = type; 
 							nullable = nullable || oneOf.some((item: any) => item["nullable"]);
 						}
 						const referenceIsEnum =
@@ -293,7 +297,7 @@ export class Generator {
 							type,
 							nullable: nullable,
 							format: property["format"],
-							["$ref"]: property["$ref"],
+							["$ref"]: refName,
 							referenceIsEnum,
 							items: property["items"],
 							additionalProperties: property["additionalProperties"],

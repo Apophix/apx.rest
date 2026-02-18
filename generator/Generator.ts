@@ -630,8 +630,15 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string,
 		clientFunctionName: string
 	): string {
+		let formDataBlock = "";
+		if (this.isFormEndpoint) {
+			formDataBlock += `\t\tconst formData = new FormData();\n`;
+			for (const formField of this.requestComponent?.properties ?? []) {
+				formDataBlock += `\t\tformData.append("${formField.name}", request.${formField.lowerCamelName});\n`;
+			}
+		}
 		return `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): AsyncGenerator<${finalResponse}> {
-		for await (const chunkDto of this.${clientFunctionName}Iterable<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options)) {
+${formDataBlock}\t\tfor await (const chunkDto of this.${clientFunctionName}Iterable<${responseDtoName}>(\`${this.builtEndpointUrl}\`${this.requestStr}, options)) {
 			if (chunkDto) {
 				yield new ${finalResponse}(chunkDto);
 			}

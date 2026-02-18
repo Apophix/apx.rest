@@ -1129,11 +1129,22 @@ class Property implements TPropertyDto {
 		return this.type === "number" || this.type === "integer" || this.type === "int32" || (!this.type && (this.format === "int32" || this.format === "int64" || this.format === "float" || this.format === "double"));
 	}
 
+	public get isFormFile(): boolean {
+		return (this.type === "string" && this.format === "binary") || this.referenceComponentName === "IFormFile";
+	}
+
 	public get formattedDtoType(): string | undefined {
+		
 		if (this.isArray && this.referenceIsEnum) {
 			return `${this.items?.referenceComponentName ?? "???"}[]`;
 		}
 
+		if (this.isArray && this.isFormFile) { 
+			return `File[]`;
+		}
+		
+		if (this.isFormFile)return "File";
+		
 		if (this.referenceIsEnum) {
 			return `${this.referenceComponentName}`;
 		}

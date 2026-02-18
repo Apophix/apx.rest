@@ -86,11 +86,11 @@ export class Generator {
                     const schemaRef = content["schema"]["$ref"];
                     if (contentType === "multipart/form-data") {
                         const operationName = operation["operationId"];
-                        const formSchemaName = `${operationName
-                            .charAt(0)
-                            .toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-                        endpointToFormRequestNameMap.set(operationName, formSchemaName);
                         if (!schemaRef) {
+                            const formSchemaName = `${operationName
+                                .charAt(0)
+                                .toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+                            endpointToFormRequestNameMap.set(operationName, formSchemaName);
                             // process form data here
                             iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
                             requestComponents.set(formSchemaName, new RequestComponent({
@@ -111,6 +111,11 @@ export class Generator {
                                 requiredProperties: content["schema"]["required"] || [],
                             }));
                             continue;
+                        }
+                        else {
+                            // $ref schema — map to the actual ref name so requestComponents lookup works
+                            const refSchemaName = schemaRef.split("/").pop();
+                            endpointToFormRequestNameMap.set(operationName, refSchemaName);
                         }
                     }
                     const schemaName = schemaRef.split("/").pop();

@@ -109,13 +109,14 @@ export class Generator {
 
 					if (contentType === "multipart/form-data") {
 						const operationName = operation["operationId"];
-						const formSchemaName = `${operationName
-							.charAt(0)
-							.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-
-						endpointToFormRequestNameMap.set(operationName, formSchemaName);
 
 						if (!schemaRef) {
+							const formSchemaName = `${operationName
+								.charAt(0)
+								.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+
+							endpointToFormRequestNameMap.set(operationName, formSchemaName);
+
 							// process form data here
 							iLog(
 								1,
@@ -147,6 +148,10 @@ export class Generator {
 								})
 							);
 							continue;
+						} else {
+							// $ref schema — map to the actual ref name so requestComponents lookup works
+							const refSchemaName = schemaRef.split("/").pop();
+							endpointToFormRequestNameMap.set(operationName, refSchemaName);
 						}
 					}
 

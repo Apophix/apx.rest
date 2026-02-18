@@ -478,6 +478,46 @@ export abstract class ApiClient {
 		}
 	}
 
+	public async *postFormDataRawIterable(path: string, formData: FormData, options?: TApiRequestOptions) {
+		const url = this.buildUrl(path);
+		options = this.buildRequestOptions(options);
+		const headers = await this.buildHeaders(options);
+		// Do NOT set Content-Type — the browser sets it with the multipart boundary
+		delete headers["Content-Type"];
+		const response = await fetch(url, {
+			method: "POST",
+			body: formData,
+			headers,
+		});
+
+		if (!response.body) {
+			throw new Error("Response body is null");
+		}
+
+		if (!response.ok) {
+			return { data: undefined, response };
+		}
+
+		const reader = response.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				break;
+			}
+			yield value;
+		}
+	}
+
+	public async *postFormDataIterable<T>(
+		path: string,
+		formData: FormData,
+		options?: TApiRequestOptions
+	): AsyncGenerator<T> {
+		for await (const chunk of this.postFormDataRawIterable(path, formData, options)) {
+			yield this.handleResponseChunk<T>(chunk);
+		}
+	}
+
 	public async *putIterable<T>(
 		path: string,
 		body: unknown,

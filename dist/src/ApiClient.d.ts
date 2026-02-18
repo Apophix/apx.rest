@@ -47,6 +47,11 @@ export declare abstract class ApiClient {
     protected handleResponseChunk<T>(chunk: Uint8Array<ArrayBufferLike>): T;
     getIterable<T>(path: string, options?: TApiRequestOptions): AsyncGenerator<T>;
     postIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T>;
+    postFormDataRawIterable(path: string, formData: FormData, options?: TApiRequestOptions): AsyncGenerator<Uint8Array<ArrayBufferLike>, {
+        data: undefined;
+        response: Response;
+    } | undefined, unknown>;
+    postFormDataIterable<T>(path: string, formData: FormData, options?: TApiRequestOptions): AsyncGenerator<T>;
     putIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T>;
     patchIterable<T>(path: string, body: unknown, options?: TApiRequestOptions): AsyncGenerator<T>;
     deleteIterable<T>(path: string, options?: TApiRequestOptions): AsyncGenerator<T>;

@@ -395,6 +395,37 @@ export class ApiClient {
             yield this.handleResponseChunk(chunk);
         }
     }
+    async *postFormDataRawIterable(path, formData, options) {
+        const url = this.buildUrl(path);
+        options = this.buildRequestOptions(options);
+        const headers = await this.buildHeaders(options);
+        // Do NOT set Content-Type — the browser sets it with the multipart boundary
+        delete headers["Content-Type"];
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+            headers,
+        });
+        if (!response.body) {
+            throw new Error("Response body is null");
+        }
+        if (!response.ok) {
+            return { data: undefined, response };
+        }
+        const reader = response.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            yield value;
+        }
+    }
+    async *postFormDataIterable(path, formData, options) {
+        for await (const chunk of this.postFormDataRawIterable(path, formData, options)) {
+            yield this.handleResponseChunk(chunk);
+        }
+    }
     async *putIterable(path, body, options) {
         for await (const chunk of this.putRawIterable(path, body, options)) {
             yield this.handleResponseChunk(chunk);

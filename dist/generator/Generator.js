@@ -135,6 +135,11 @@ export class Generator {
         }
         for (const [schemaName, schema] of Object.entries(components ?? {})) {
             iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
+            // dumb hack
+            if (schemaName === "IFormFile") {
+                iLog(2, chalk.cyanBright.dim("Processing as IFormFile model"));
+                continue;
+            }
             if (schema["enum"]) {
                 iLog(2, chalk.cyanBright.dim("Processing as enum"));
                 enumComponents.set(schemaName, new EnumComponent({

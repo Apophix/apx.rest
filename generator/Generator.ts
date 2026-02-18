@@ -233,7 +233,7 @@ export class Generator {
 						properties: Object.entries<any>(schema["properties"]).map(
 							([propertyName, property]) => {
 								let nullable = property["nullable"] || !!property["$ref"] || false;
-								let refName = property["$ref"]; 
+								let refName = property["$ref"];
 								if (schema["required"]) {
 									if (schema["required"].includes(propertyName)) {
 										nullable = false;
@@ -243,7 +243,7 @@ export class Generator {
 								if (!type && property["oneOf"]) {
 									const oneOf = property["oneOf"];
 									type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
-									refName = type; 
+									refName = type;
 									nullable = nullable || oneOf.some((item: any) => item["nullable"]);
 								}
 								const referenceIsEnum =
@@ -276,7 +276,7 @@ export class Generator {
 					componentType: EComponentType.Model,
 					properties: Object.entries<any>(schema["properties"]).map(([propertyName, property]) => {
 						let nullable = property["nullable"] || !!property["$ref"] || false;
-						let refName = property["$ref"]; 
+						let refName = property["$ref"];
 						if (schema["required"]) {
 							if (schema["required"].includes(propertyName)) {
 								nullable = false;
@@ -286,7 +286,7 @@ export class Generator {
 						if (!type && property["oneOf"]) {
 							const oneOf = property["oneOf"];
 							type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
-							refName = type; 
+							refName = type;
 							nullable = nullable || oneOf.some((item: any) => item["nullable"]);
 						}
 						const referenceIsEnum =
@@ -611,18 +611,16 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string,
 		clientFunctionName: string
 	): string {
-		return `public async ${
-			this.clientMethodName
-		}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
+		return `public async ${this.clientMethodName
+			}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-			.map((param) => {
-				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-			})
-			.join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
-			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`${this.requestStr}, options);
+				.map((param) => {
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""
+			}\`${this.requestStr}, options);
 		if (!response.ok || !data) {
 			return [null, response];
 		}
@@ -632,18 +630,16 @@ class ApiPath implements TApiPathDto {
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
-		return `public async ${
-			this.clientMethodName
-		}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
+		return `public async ${this.clientMethodName
+			}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-			.map((param) => {
-				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-			})
-			.join("\n\t\t")}
-		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${
-			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`${this.requestStr}, options);
+				.map((param) => {
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""
+			}\`${this.requestStr}, options);
 
 		return [null, response];
 	}`.replaceAll(/^\s*$/gm, ""); // remove empty lines
@@ -655,18 +651,16 @@ class ApiPath implements TApiPathDto {
 		finalResponse: string
 	): string {
 		const bodyVar = this.method === "get" ? "" : "undefined, ";
-		return `public async ${
-			this.clientMethodName
-		}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
+		return `public async ${this.clientMethodName
+			}(options?: TApiRequestOptions): Promise<TApiClientResult<${finalResponse}>> {
 		${this.hasQueryParams ? `const queryParams = new URLSearchParams();` : ""}
 		${this.queryParams
-			.map((param) => {
-				return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
-			})
-			.join("\n\t\t")}
-		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${
-			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`, ${bodyVar}options);
+				.map((param) => {
+					return `queryParams.set("${param.name}", request.${param.name}?.toString() ?? "");`;
+				})
+				.join("\n\t\t")}
+		const { response, data } = await this.${clientFunctionName}<${responseDtoName}>(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""
+			}\`, ${bodyVar}options);
 
 		if (!response.ok || !data) {
 			return [null, response];
@@ -865,13 +859,11 @@ class Component implements TComponentDto {
 			if (property.isArray && !property.referenceIsEnum) {
 				if (property.items?.referenceComponentName && !property.items?.referenceIsEnum) {
 					if (property.nullable) {
-						str += `\n\t\tthis.${property.name} = dto.${property.name}?.map((item) => new ${
-							property.items!.referenceComponentName
-						}(item));`;
+						str += `\n\t\tthis.${property.name} = dto.${property.name}?.map((item) => new ${property.items!.referenceComponentName
+							}(item));`;
 					} else {
-						str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${
-							property.items!.referenceComponentName
-						}(item));`;
+						str += `\n\t\tthis.${property.name} = dto.${property.name}.map((item) => new ${property.items!.referenceComponentName
+							}(item));`;
 					}
 
 					continue;
@@ -884,12 +876,11 @@ class Component implements TComponentDto {
 						property.additionalProperties.referenceComponentName &&
 						!property.additionalProperties.referenceIsEnum
 					) {
-						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${
-							property.name
-						}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
-							"[]",
-							""
-						)}(item))]));`;
+						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name
+							}).map(([key, value]) => [key, value.map((item) => new ${property.additionalProperties?.items?.formattedType?.replace(
+								"[]",
+								""
+							)}(item))]));`;
 						continue;
 					} else {
 						str += `\n\t\tthis.${property.name} = new Map(Object.entries(dto.${property.name}).map(([key, value]) => [key, value.map((item) => item)]));`;
@@ -954,7 +945,7 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component {}
+class ModelComponent extends Component { }
 
 class RequestComponent extends Component {
 	public override render(): string {
@@ -996,8 +987,8 @@ class ResponseComponent extends Component {
 
 		let r = `public switch(
 ${this.properties
-	.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`)
-	.join(",\n")}		
+				.map((property) => `\t${property.name}: (value: ${property.formattedType}) => void`)
+				.join(",\n")}		
 ) : void {\n`;
 		for (const property of this.properties) {
 			r += `\tif (this.${property.name} !== undefined) {\n`;
@@ -1078,7 +1069,7 @@ class Property implements TPropertyDto {
 	}
 
 	public get isNumberType(): boolean {
-		return this.type === "number" || this.type === "integer";
+		return this.type === "number" || this.type === "integer" || this.type === "int32" || (!this.type && (this.format === "int32" || this.format === "int64" || this.format === "float" || this.format === "double"));
 	}
 
 	public get formattedDtoType(): string | undefined {

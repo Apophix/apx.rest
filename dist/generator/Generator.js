@@ -826,7 +826,7 @@ class Property {
         return this.type === "string" && this.format === "date-time";
     }
     get isNumberType() {
-        return this.type === "number" || this.type === "integer";
+        return this.type === "number" || this.type === "integer" || this.type === "int32" || (!this.type && (this.format === "int32" || this.format === "int64" || this.format === "float" || this.format === "double"));
     }
     get formattedDtoType() {
         if (this.isArray && this.referenceIsEnum) {

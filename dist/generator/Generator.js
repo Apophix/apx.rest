@@ -555,6 +555,7 @@ class ApiPath {
     }
     render() {
         let requestDtoName = this.requestComponent?.dtoName ?? "any";
+        iLog(1, chalk.yellowBright(`Rendering client method ${this.clientMethodName} with request DTO ${requestDtoName} and response DTO ${this.responseComponent?.dtoName ?? "any"}`));
         const responseDtoName = this.responseComponent?.dtoName ?? "any";
         const finalResponse = this.responseComponent?.capitalizedName ?? "any";
         let clientFunctionName = this.method;

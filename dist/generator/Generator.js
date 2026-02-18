@@ -915,6 +915,11 @@ class Property {
             return "Date";
         if (this.isNumberType)
             return "number";
+        if (this.isArray && this.isFormFile) {
+            return `File[]`;
+        }
+        if (this.isFormFile)
+            return "File";
         if (this.isArray && this.referenceIsEnum) {
             return `${this.items?.referenceComponentName ?? "???"}[]`;
         }

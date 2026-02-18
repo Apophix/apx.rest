@@ -278,13 +278,15 @@ export class Generator {
 			}
 
 			iLog(2, chalk.cyanBright.dim("Processing as model"));
+			// IFormFile doesn't have properties, it's just type: string, format: binary
+
 			modelComponents.set(
 				schemaName,
 				new ModelComponent({
 					name: schemaName,
 					requiredProperties: schema["required"] || [],
 					componentType: EComponentType.Model,
-					properties: Object.entries<any>(schema["properties"]).map(([propertyName, property]) => {
+					properties: Object.entries<any>(schema["properties"] || {}).map(([propertyName, property]) => {
 						let nullable = property["nullable"] || !!property["$ref"] || false;
 						let refName = property["$ref"];
 						if (schema["required"]) {

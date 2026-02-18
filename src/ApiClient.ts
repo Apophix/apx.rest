@@ -138,7 +138,7 @@ export abstract class ApiClient {
 	): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
-		const bodyJson = JSON.stringify(body);
+		const bodyJson = JSON.stringify(body ?? {});
 		const headers = await this.buildHeaders(options);
 		if (!headers["Content-Type"]) {
 			headers["Content-Type"] = "application/json";
@@ -200,7 +200,7 @@ export abstract class ApiClient {
 		const response = await fetch(url, {
 			method: "PUT",
 			headers,
-			body: JSON.stringify(body),
+			body: JSON.stringify(body ?? {}),
 		});
 
 		if (!response.ok) {
@@ -232,7 +232,7 @@ export abstract class ApiClient {
 		const response = await fetch(url, {
 			method: "PATCH",
 			headers,
-			body: JSON.stringify(body),
+			body: JSON.stringify(body ?? {}),
 		});
 
 		if (!response.ok) {
@@ -264,8 +264,6 @@ export abstract class ApiClient {
 		if (!body) {
 			delete headers["Content-Type"];
 		}
-		console.log("Headers for DELETE request:", headers);
-		console.log("Body for DELETE request:", body);
 		const response = await fetch(url, {
 			method: "DELETE",
 			body: body ? JSON.stringify(body) : undefined,

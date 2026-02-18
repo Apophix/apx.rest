@@ -106,45 +106,45 @@ export class Generator {
 					}
 
 					const schemaRef = content["schema"]["$ref"];
-					if (!schemaRef) {
-						if (contentType === "multipart/form-data") {
-							// process form data here
-							const operationName = operation["operationId"];
-							const formSchemaName = `${operationName
-								.charAt(0)
-								.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-							iLog(
-								1,
-								chalk.cyanBright(
-									`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
-								)
-							);
-							requestComponents.set(
-								formSchemaName,
-								new RequestComponent({
-									componentType: EComponentType.Request,
-									name: formSchemaName,
-									properties: Object.entries<any>(content["schema"]["properties"]).map(
-										([propertyName, property]) => {
-											return new Property({
-												name: propertyName,
-												type:
-													property["format"] === "binary"
-														? "File"
-														: property["type"],
-												nullable: property["nullable"] || false,
-												format: property["format"],
-												referenceIsEnum: false,
-												isFormField: true,
-											});
-										}
-									),
-									requiredProperties: content["schema"]["required"] || [],
-								})
-							);
+					if (!schemaRef || contentType === "multipart/form-data") {
 
-							endpointToFormRequestNameMap.set(operationName, formSchemaName);
-						}
+						// process form data here
+						const operationName = operation["operationId"];
+						const formSchemaName = `${operationName
+							.charAt(0)
+							.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+						iLog(
+							1,
+							chalk.cyanBright(
+								`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+							)
+						);
+						requestComponents.set(
+							formSchemaName,
+							new RequestComponent({
+								componentType: EComponentType.Request,
+								name: formSchemaName,
+								properties: Object.entries<any>(content["schema"]["properties"]).map(
+									([propertyName, property]) => {
+										return new Property({
+											name: propertyName,
+											type:
+												property["format"] === "binary"
+													? "File"
+													: property["type"],
+											nullable: property["nullable"] || false,
+											format: property["format"],
+											referenceIsEnum: false,
+											isFormField: true,
+										});
+									}
+								),
+								requiredProperties: content["schema"]["required"] || [],
+							})
+						);
+
+						endpointToFormRequestNameMap.set(operationName, formSchemaName);
+
 						continue;
 					}
 					const schemaName = schemaRef.split("/").pop();
@@ -655,14 +655,14 @@ class ApiPath implements TApiPathDto {
 		ret += `\t\t}\n`;
 
 		ret += `\t\treturn [new ${finalResponse}(data), response];\n`;
-		ret += "\t}\n"; 
+		ret += "\t}\n";
 		ret = ret.replaceAll(/^\s*$/gm, ""); // remove empty lines
-		return ret; 
+		return ret;
 	}
 
 	private renderRequestOnly(requestDtoName: string, clientFunctionName: string): string {
-		let ret = `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {\n`; 
-		if (this.hasQueryParams) { 
+		let ret = `public async ${this.clientMethodName}(request: ${requestDtoName}, options?: TApiRequestOptions): Promise<TApiClientResult<null>> {\n`;
+		if (this.hasQueryParams) {
 			ret += `\t\tconst queryParams = new URLSearchParams();\n`;
 			for (const queryParam of this.queryParams) {
 				ret += `\t\tqueryParams.set("${queryParam.name}", request.${queryParam.name}?.toString() ?? "");\n`;
@@ -675,9 +675,8 @@ class ApiPath implements TApiPathDto {
 			}
 		}
 
-		ret += `\t\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${
-			this.hasQueryParams ? "?${queryParams}" : ""
-		}\`${this.requestStr}, options);\n`; 
+		ret += `\t\tconst { response } = await this.${clientFunctionName}(\`${this.builtEndpointUrl}${this.hasQueryParams ? "?${queryParams}" : ""
+			}\`${this.requestStr}, options);\n`;
 
 		ret += "\t\treturn [null, response];\n";
 		ret += "\t}\n";

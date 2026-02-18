@@ -84,33 +84,31 @@ export class Generator {
                         continue;
                     }
                     const schemaRef = content["schema"]["$ref"];
-                    if (!schemaRef) {
-                        if (contentType === "multipart/form-data") {
-                            // process form data here
-                            const operationName = operation["operationId"];
-                            const formSchemaName = `${operationName
-                                .charAt(0)
-                                .toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-                            iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
-                            requestComponents.set(formSchemaName, new RequestComponent({
-                                componentType: EComponentType.Request,
-                                name: formSchemaName,
-                                properties: Object.entries(content["schema"]["properties"]).map(([propertyName, property]) => {
-                                    return new Property({
-                                        name: propertyName,
-                                        type: property["format"] === "binary"
-                                            ? "File"
-                                            : property["type"],
-                                        nullable: property["nullable"] || false,
-                                        format: property["format"],
-                                        referenceIsEnum: false,
-                                        isFormField: true,
-                                    });
-                                }),
-                                requiredProperties: content["schema"]["required"] || [],
-                            }));
-                            endpointToFormRequestNameMap.set(operationName, formSchemaName);
-                        }
+                    if (!schemaRef || contentType === "multipart/form-data") {
+                        // process form data here
+                        const operationName = operation["operationId"];
+                        const formSchemaName = `${operationName
+                            .charAt(0)
+                            .toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+                        iLog(1, chalk.cyanBright(`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`));
+                        requestComponents.set(formSchemaName, new RequestComponent({
+                            componentType: EComponentType.Request,
+                            name: formSchemaName,
+                            properties: Object.entries(content["schema"]["properties"]).map(([propertyName, property]) => {
+                                return new Property({
+                                    name: propertyName,
+                                    type: property["format"] === "binary"
+                                        ? "File"
+                                        : property["type"],
+                                    nullable: property["nullable"] || false,
+                                    format: property["format"],
+                                    referenceIsEnum: false,
+                                    isFormField: true,
+                                });
+                            }),
+                            requiredProperties: content["schema"]["required"] || [],
+                        }));
+                        endpointToFormRequestNameMap.set(operationName, formSchemaName);
                         continue;
                     }
                     const schemaName = schemaRef.split("/").pop();

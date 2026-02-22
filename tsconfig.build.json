@@ -3,9 +3,11 @@
   "compilerOptions": {
     "noEmit": false,
     "allowImportingTsExtensions": false,
+    "moduleResolution": "nodenext",
     "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
+    "sourceMap": true,
     "rootDir": "."
   },
   "include": ["src/**/*.ts", "codegen.ts", "generator/**/*.ts"],

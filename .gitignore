@@ -1,2 +1,8 @@
 node_modules/
+dist/
 bin/
+
+# Compiled artifacts — should only exist under dist/
+*.js
+*.d.ts
+*.d.ts.map

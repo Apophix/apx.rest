@@ -1,29 +1,31 @@
 {
 	"name": "apx.rest",
 	"version": "1.0.0",
-	"main": "dist/src/index.js",
+	"description": "TypeScript code generation tool for REST APIs",
 	"type": "module",
+	"main": "./dist/src/index.js",
+	"types": "./dist/src/index.d.ts",
 	"exports": {
-		".": "./dist/src/index.js"
-	},
-	"scripts": {
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"build": "tsc -p ./tsconfig.build.json",
-		"prepublishOnly": "npm run build",
-		"start": "node index.js",
-		"apx-generate": "tsx ./codegen.ts"
+		".": {
+			"import": "./dist/src/index.js",
+			"types": "./dist/src/index.d.ts"
+		}
 	},
 	"bin": {
-		"apx-gen": "./codegen.ts"
+		"apx-gen": "./dist/codegen.js"
 	},
 	"files": [
-		"codegen.ts",
-		"generator/",
 		"dist/",
-		"README.md",
-		"**/*"
+		"README.md"
 	],
+	"scripts": {
+		"build": "tsc -p ./tsconfig.build.json",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"release": "changeset publish",
+		"prepublishOnly": "npm run build"
+	},
 	"keywords": [
 		"codegen",
 		"typescript",
@@ -32,12 +34,12 @@
 	],
 	"author": "Apophix",
 	"license": "ISC",
-	"description": "TypeScript code generation tool for REST APIs",
 	"dependencies": {
 		"chalk": "^5",
 		"tsx": "^4"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2",
 		"@types/node": "^20",
 		"typescript": "^5",
 		"vitest": "^4.0.18"

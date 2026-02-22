@@ -7,7 +7,8 @@
 		".": "./dist/src/index.js"
 	},
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"build": "tsc -p ./tsconfig.build.json",
 		"prepublishOnly": "npm run build",
 		"start": "node index.js",
@@ -20,10 +21,15 @@
 		"codegen.ts",
 		"generator/",
 		"dist/",
-		"README.md", 
+		"README.md",
 		"**/*"
 	],
-	"keywords": ["codegen", "typescript", "api", "rest"],
+	"keywords": [
+		"codegen",
+		"typescript",
+		"api",
+		"rest"
+	],
 	"author": "Apophix",
 	"license": "ISC",
 	"description": "TypeScript code generation tool for REST APIs",
@@ -33,6 +39,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20",
-		"typescript": "^5"
+		"typescript": "^5",
+		"vitest": "^4.0.18"
 	}
 }

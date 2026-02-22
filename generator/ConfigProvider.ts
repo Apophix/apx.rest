@@ -24,7 +24,7 @@ export class ConfigProvider {
 		for (const key of keys) {
 			value = value[key];
 		}
-		if (!value) {
+		if (value === undefined || value === null) {
 			throw new Error(`Config key ${keyPath} not found.`);
 		}
 		return value as T; // if you get a type error that's your problem

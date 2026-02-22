@@ -56,11 +56,17 @@ export class Generator {
 	private async generateApi(configProvider: ConfigProvider): Promise<void> {
 		log(chalk.blueBright("Fetching OpenAPI document..."));
 
-		// set fetch to ignore self-signed cert
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+		const ignoreTlsErrors = await configProvider.getValue<boolean>("ignoreTlsErrors");
+		const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+		if (ignoreTlsErrors) {
+			log(chalk.yellow("Warning: TLS certificate validation is disabled for this request (ignoreTlsErrors: true)."));
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+		}
 
 		const documentUrl = await configProvider.getValue<string>("openApiJsonDocumentUrl");
 		const response = await fetch(documentUrl);
+
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
 		if (!response.ok) {
 			log(chalk.red("Failed to fetch OpenAPI document."));
 			return;

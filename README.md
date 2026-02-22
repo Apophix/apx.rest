@@ -1,6 +1,9 @@
 # apx.rest
 
-A powerful TypeScript code generation tool for REST APIs that generates type-safe API clients from OpenAPI specifications.
+[![npm](https://img.shields.io/npm/v/apx.rest)](https://www.npmjs.com/package/apx.rest)
+[![CI](https://github.com/Apophix/apx.rest/actions/workflows/ci.yml/badge.svg)](https://github.com/Apophix/apx.rest/actions/workflows/ci.yml)
+
+A powerful TypeScript code generation tool for REST APIsthat generates type-safe API clients from OpenAPI specifications.
 
 ## 🚀 Features
 
@@ -17,14 +20,8 @@ A powerful TypeScript code generation tool for REST APIs that generates type-saf
 
 ## 📦 Installation
 
-### From GitHub
 ```bash
-npm install github:Apophix/apx.rest
-```
-
-### From npm
-```bash
-# npm not yet supported
+npm install apx.rest
 ```
 
 ## 🛠️ Usage
@@ -116,6 +113,7 @@ This ensures that the TypeScript package is properly compiled for your Next.js a
 | `clientBaseUrlValue` | string | Base URL for API requests |
 | `outputBaseDirectory` | string | Directory where client will be generated |
 | `streamedEndpoints` | string[] | List of endpoints that return streaming data |
+| `ignoreTlsErrors` | boolean | Disable TLS certificate validation when fetching the OpenAPI document. Default: `false`. Only enable for local dev with self-signed certs — never in production. |
 
 ### Multiple APIs Example
 
@@ -287,6 +285,7 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 
+- [npm Package](https://www.npmjs.com/package/apx.rest)
 - [GitHub Repository](https://github.com/Apophix/apx.rest)
 - [Issues & Bug Reports](https://github.com/Apophix/apx.rest/issues)
 

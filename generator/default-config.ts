@@ -1,4 +1,5 @@
 export default { 
 	"outputBaseDirectory": "src/clients", 
-	"streamedEndpoints": []
+	"streamedEndpoints": [],
+	"ignoreTlsErrors": false
 }

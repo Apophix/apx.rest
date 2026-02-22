@@ -672,6 +672,21 @@ export class ApiPath implements TApiPathDto {
 		return this.shouldSkipRequest ? ", undefined" : ", request";
 	}
 
+	private renderStreamedResponseOnly(
+		responseDtoName: string,
+		finalResponse: string,
+		clientFunctionName: string
+	): string {
+		const bodyVar = this.method === "get" ? "" : ", undefined";
+		return `public async ${this.clientMethodName}(options?: TApiRequestOptions): AsyncGenerator<${finalResponse}> {
+		for await (const chunkDto of this.${clientFunctionName}Iterable<${responseDtoName}>(\`${this.builtEndpointUrl}\`${bodyVar}, options)) {
+			if (chunkDto) {
+				yield new ${finalResponse}(chunkDto);
+			}
+		}
+	}`;
+	}
+
 	private renderRequestAndStreamedResponse(
 		requestDtoName: string,
 		responseDtoName: string,
@@ -850,6 +865,9 @@ ${formDataBlock}\t\tfor await (const chunkDto of this.${clientFunctionName}Itera
 		}
 
 		if (!!this.responseComponent) {
+			if (this.isStreamed) {
+				return this.renderStreamedResponseOnly(responseDtoName, finalResponse, clientFunctionName);
+			}
 			return this.renderResponseOnly(responseDtoName, clientFunctionName, finalResponse);
 		}
 

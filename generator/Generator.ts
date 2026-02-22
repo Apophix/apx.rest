@@ -11,13 +11,23 @@ function iLog(indentLevel: number, ...args: string[]) {
 	console.log("\t".repeat(indentLevel), ...args);
 }
 
-const enumComponents = new Map<string, EnumComponent>();
-const requestComponents = new Map<string, RequestComponent>();
-const responseComponents = new Map<string, ResponseComponent>();
-const modelComponents = new Map<string, ModelComponent>();
-const enumNames = new Set<string>();
-const responsesMarkedAsUnions = new Set<string>();
-const endpointToFormRequestNameMap = new Map<string, string>();
+export const enumComponents = new Map<string, EnumComponent>();
+export const requestComponents = new Map<string, RequestComponent>();
+export const responseComponents = new Map<string, ResponseComponent>();
+export const modelComponents = new Map<string, ModelComponent>();
+export const enumNames = new Set<string>();
+export const responsesMarkedAsUnions = new Set<string>();
+export const endpointToFormRequestNameMap = new Map<string, string>();
+
+export function resetGeneratorState(): void {
+	enumComponents.clear();
+	requestComponents.clear();
+	responseComponents.clear();
+	modelComponents.clear();
+	enumNames.clear();
+	responsesMarkedAsUnions.clear();
+	endpointToFormRequestNameMap.clear();
+}
 
 export class Generator {
 	public async generate(): Promise<void> {
@@ -58,387 +68,16 @@ export class Generator {
 		const openApiDocument = await response.json();
 		log(chalk.greenBright("OpenAPI document fetched successfully."));
 
-		log(chalk.blueBright("Parsing OpenAPI document..."));
-
-		const requestNames = new Set<string>();
-		const responseNames = new Set<string>();
-
-		for (const [endpoint, path] of Object.entries<any>(openApiDocument["paths"])) {
-			for (const [method, operation] of Object.entries<any>(path)) {
-				const responses = operation["responses"];
-				for (const [responseCode, response] of Object.entries<any>(responses)) {
-					const contents = response["content"];
-					if (!contents) {
-						continue;
-					}
-
-					for (const [contentType, content] of Object.entries<any>(contents)) {
-						const schema = content["schema"];
-						if (!schema) {
-							continue;
-						}
-
-						const schemaRef = content["schema"]["$ref"];
-						if (!schemaRef) continue;
-						const schemaName = schemaRef.split("/").pop();
-						iLog(
-							1,
-							chalk.cyanBright(
-								`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
-							)
-						);
-						responseNames.add(schemaName);
-
-						if (operation["x-union-response"]) responsesMarkedAsUnions.add(schemaName);
-					}
-				}
-
-				const requestBody = operation["requestBody"];
-				if (!requestBody) {
-					continue;
-				}
-
-				const contents = requestBody["content"];
-				for (const [contentType, content] of Object.entries<any>(contents)) {
-					const schema = content["schema"];
-					if (!schema) {
-						continue;
-					}
-
-					const schemaRef = content["schema"]["$ref"];
-
-					if (contentType === "multipart/form-data") {
-						const operationName = operation["operationId"];
-
-						if (!schemaRef) {
-							const formSchemaName = `${operationName
-								.charAt(0)
-								.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
-
-							endpointToFormRequestNameMap.set(operationName, formSchemaName);
-
-							// process form data here
-							iLog(
-								1,
-								chalk.cyanBright(
-									`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
-								)
-							);
-							requestComponents.set(
-								formSchemaName,
-								new RequestComponent({
-									componentType: EComponentType.Request,
-									name: formSchemaName,
-									properties: Object.entries<any>(content["schema"]["properties"]).map(
-										([propertyName, property]) => {
-											return new Property({
-												name: propertyName,
-												type:
-													property["format"] === "binary"
-														? "File"
-														: property["type"],
-												nullable: property["nullable"] || false,
-												format: property["format"],
-												referenceIsEnum: false,
-												isFormField: true,
-											});
-										}
-									),
-									requiredProperties: content["schema"]["required"] || [],
-								})
-							);
-							continue;
-						} else {
-							// $ref schema — map to the actual ref name so requestComponents lookup works
-							const refSchemaName = schemaRef.split("/").pop();
-							endpointToFormRequestNameMap.set(operationName, refSchemaName);
-						}
-					}
-
-					const schemaName = schemaRef.split("/").pop();
-					iLog(
-						1,
-						chalk.cyanBright(
-							`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
-						)
-					);
-					requestNames.add(schemaName);
-				}
-			}
-		}
-		log(chalk.greenBright("OpenAPI document parsed successfully."));
-		log(chalk.blueBright("Processing components..."));
-
-		const components = openApiDocument["components"]?.["schemas"];
-		if (!components) {
-			log(chalk.red("No components found in OpenAPI document."));
-			// return;
-		}
-
-		log(chalk.blue("Scanning for enums..."));
-		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
-			if (schema["enum"]) {
-				iLog(
-					1,
-					chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`)
-				);
-				enumNames.add(schemaName);
-			}
-		}
-
-		for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
-			iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
-
-			// dumb hack
-			if (schemaName === "IFormFile") {
-				iLog(2, chalk.cyanBright.dim("Processing as IFormFile model"));
-				continue; 
-			} 
-
-			if (schema["enum"]) {
-				iLog(2, chalk.cyanBright.dim("Processing as enum"));
-				enumComponents.set(
-					schemaName,
-					new EnumComponent({
-						name: schemaName,
-						values: schema["enum"],
-						enumNames: schema["x-enumNames"],
-						type: schema["type"] || "string",
-					})
-				);
-				continue;
-			}
-
-			if (requestNames.has(schemaName)) {
-				iLog(2, chalk.cyanBright.dim("Processing as request"));
-				requestComponents.set(
-					schemaName,
-					new RequestComponent({
-						name: schemaName,
-						requiredProperties: schema["required"] || [],
-						componentType: EComponentType.Request,
-						properties: Object.entries<any>(schema["properties"]).map(
-							([propertyName, property]) => {
-								let nullable = property["nullable"] || !!property["$ref"] || false;
-								if (schema["required"]) {
-									if (schema["required"].includes(propertyName)) {
-										nullable = false;
-									}
-								}
-								const referenceIsEnum =
-									enumNames.has(property["$ref"]?.split("/").pop()) ||
-									enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
-								return new Property({
-									name: propertyName,
-									type: property["type"],
-									nullable: nullable,
-									format: property["format"],
-									["$ref"]: property["$ref"],
-									referenceIsEnum,
-									items: property["items"],
-									additionalProperties: property["additionalProperties"],
-									isFormField: false,
-								});
-							}
-						),
-					})
-				);
-				continue;
-			}
-
-			if (responseNames.has(schemaName)) {
-				iLog(2, chalk.cyanBright.dim("Processing as response"));
-				responseComponents.set(
-					schemaName,
-					new ResponseComponent({
-						name: schemaName,
-						requiredProperties: schema["required"] || [],
-						properties: Object.entries<any>(schema["properties"]).map(
-							([propertyName, property]) => {
-								let nullable = property["nullable"] || !!property["$ref"] || false;
-								let refName = property["$ref"];
-								if (schema["required"]) {
-									if (schema["required"].includes(propertyName)) {
-										nullable = false;
-									}
-								}
-								let type = property["type"];
-								if (!type && property["oneOf"]) {
-									const oneOf = property["oneOf"];
-									type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
-									refName = type;
-									nullable = nullable || oneOf.some((item: any) => item["nullable"]);
-								}
-								const referenceIsEnum =
-									enumNames.has(property["$ref"]?.split("/").pop()) ||
-									enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
-								return new Property({
-									name: propertyName,
-									type,
-									nullable: nullable,
-									format: property["format"],
-									["$ref"]: refName,
-									referenceIsEnum,
-									items: property["items"],
-									additionalProperties: property["additionalProperties"],
-									isFormField: false,
-								});
-							}
-						),
-						componentType: EComponentType.Response,
-					})
-				);
-				continue;
-			}
-
-			iLog(2, chalk.cyanBright.dim("Processing as model"));
-			// IFormFile doesn't have properties, it's just type: string, format: binary
-
-			modelComponents.set(
-				schemaName,
-				new ModelComponent({
-					name: schemaName,
-					requiredProperties: schema["required"] || [],
-					componentType: EComponentType.Model,
-					properties: Object.entries<any>(schema["properties"] || {}).map(([propertyName, property]) => {
-						let nullable = property["nullable"] || !!property["$ref"] || false;
-						let refName = property["$ref"];
-						if (schema["required"]) {
-							if (schema["required"].includes(propertyName)) {
-								nullable = false;
-							}
-						}
-						let type = property["type"];
-						if (!type && property["oneOf"]) {
-							const oneOf = property["oneOf"];
-							type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
-							refName = type;
-							nullable = nullable || oneOf.some((item: any) => item["nullable"]);
-						}
-						const referenceIsEnum =
-							enumNames.has(property["$ref"]?.split("/").pop()) ||
-							enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
-						return new Property({
-							name: propertyName,
-							type,
-							nullable: nullable,
-							format: property["format"],
-							["$ref"]: refName,
-							referenceIsEnum,
-							items: property["items"],
-							additionalProperties: property["additionalProperties"],
-							isFormField: false,
-						});
-					}),
-				})
-			);
-		}
-		log(chalk.greenBright("Components processed successfully."));
-
-		log(chalk.blueBright("Generating client code..."));
-
-		const generatedOn = new Date().toISOString();
-		const headerCommentLines = [
-			"// -----------------------------------------------------------------------------",
-			"//  AUTO-GENERATED FILE — apx.rest",
-			"//  Do not modify this file directly.",
-			"// -----------------------------------------------------------------------------",
-			`//  Generated on: ${generatedOn}`,
-			`//  Source OpenAPI document: ${documentUrl}`,
-			"//  This file will be overwritten on regeneration.",
-			"//",
-			"//  Regenerate with:",
-			"//    npx apx-gen",
-			"//",
-			"//  Customize generation with:",
-			"//    apx-rest-config.json",
-			"// -----------------------------------------------------------------------------",
-		];
-
-		let outputStr = `${headerCommentLines.join("\n")}\n\n`;
-		outputStr += "/* eslint-disable */\n\n";
-
-		outputStr +=
-			'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
-
-		for (const requestComponent of requestComponents.values()) {
-			outputStr += requestComponent.render();
-			outputStr += "\n\n";
-		}
-
-		for (const responseComponent of responseComponents.values()) {
-			outputStr += responseComponent.render();
-			outputStr += "\n\n";
-		}
-
-		for (const enumComponent of enumComponents.values()) {
-			outputStr += enumComponent.render();
-			outputStr += "\n\n";
-		}
-
-		for (const modelComponent of modelComponents.values()) {
-			outputStr += modelComponent.render();
-			outputStr += "\n\n";
-		}
-
-		const paths: ApiPath[] = [];
-
 		const streamedEndpoints = await configProvider.getValue<string[]>("streamedEndpoints");
-
-		for (const [endpoint, path] of Object.entries<any>(openApiDocument["paths"])) {
-			for (const [method, operation] of Object.entries<any>(path)) {
-				const requestBodyContents = operation.requestBody?.content as Record<string, any>;
-				const requestInnerContents = requestBodyContents
-					? Array.from(Object.values(requestBodyContents))[0]
-					: {};
-				const responseContents = operation.responses;
-				const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
-
-				const formRequest = endpointToFormRequestNameMap.get(operation.operationId);
-				let requestComponentName = requestInnerContents.schema?.$ref?.split("/").pop();
-				if (formRequest) {
-					requestComponentName = formRequest;
-				}
-
-				// TODO: add query parameters here
-				paths.push(
-					new ApiPath({
-						endpoint,
-						method,
-						parameters: operation.parameters,
-						operationId: operation.operationId,
-						requestComponentName: requestComponentName,
-						responseComponentName: responseInnerContents.content?.[
-							"application/json"
-						]?.schema?.$ref
-							?.split("/")
-							.pop(),
-						isStreamed: streamedEndpoints.includes(endpoint),
-						isFormEndpoint: !!formRequest,
-					})
-				);
-			}
-		}
-
 		const clientName = await configProvider.getValue<string>("clientName");
-		let baseUrl = await configProvider.getValue<string>("clientBaseUrlValue");
+		const clientBaseUrl = await configProvider.getValue<string>("clientBaseUrlValue");
 
-		if (baseUrl.startsWith("http")) {
-			baseUrl = `"${baseUrl}"`;
-		}
-
-		outputStr += `export class ${clientName} extends ApiClient {\n`;
-		outputStr += `\tpublic constructor() {\n`;
-		outputStr += `\t\tsuper(${baseUrl});\n`;
-
-		outputStr += `\t}\n`;
-		outputStr += `\n`;
-
-		for (const path of paths) {
-			outputStr += `\t${path.render()}\n`;
-		}
-
-		outputStr += "}";
+		const outputStr = generateOutputString(openApiDocument, {
+			documentUrl,
+			streamedEndpoints,
+			clientName,
+			clientBaseUrl,
+		});
 
 		const outputPath = await configProvider.getValue<string>("outputBaseDirectory");
 		const outputDir = path.join(process.cwd(), outputPath);
@@ -450,7 +89,411 @@ export class Generator {
 	}
 }
 
-type TApiPathDto = {
+export type TGeneratorOptions = {
+	/** URL the document was fetched from — used in the file header comment. */
+	documentUrl: string;
+	/** List of endpoint paths that should use streaming iterables. */
+	streamedEndpoints: string[];
+	/** Name of the generated client class. */
+	clientName: string;
+	/**
+	 * Base URL passed to the ApiClient constructor.  If it starts with "http"
+	 * it will be wrapped in quotes so it becomes a string literal in the output.
+	 */
+	clientBaseUrl: string;
+};
+
+/**
+ * Pure function: parses an OpenAPI document object and returns the full
+ * TypeScript source string for the generated client.
+ *
+ * This function resets all module-level generator state before processing,
+ * so it is safe to call multiple times in tests without cross-contamination.
+ */
+export function generateOutputString(openApiDocument: any, opts: TGeneratorOptions): string {
+	resetGeneratorState();
+
+	const { documentUrl, streamedEndpoints, clientName } = opts;
+	let { clientBaseUrl } = opts;
+
+	const requestNames = new Set<string>();
+	const responseNames = new Set<string>();
+
+	for (const [endpoint, apiPath] of Object.entries<any>(openApiDocument["paths"])) {
+		for (const [method, operation] of Object.entries<any>(apiPath)) {
+			const responses = operation["responses"];
+			for (const [responseCode, response] of Object.entries<any>(responses)) {
+				const contents = response["content"];
+				if (!contents) {
+					continue;
+				}
+
+				for (const [contentType, content] of Object.entries<any>(contents)) {
+					const schema = content["schema"];
+					if (!schema) {
+						continue;
+					}
+
+					const schemaRef = content["schema"]["$ref"];
+					if (!schemaRef) continue;
+					const schemaName = schemaRef.split("/").pop();
+					iLog(
+						1,
+						chalk.cyanBright(
+							`Parsing response ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+						)
+					);
+					responseNames.add(schemaName);
+
+					if (operation["x-union-response"]) responsesMarkedAsUnions.add(schemaName);
+				}
+			}
+
+			const requestBody = operation["requestBody"];
+			if (!requestBody) {
+				continue;
+			}
+
+			const contents = requestBody["content"];
+			for (const [contentType, content] of Object.entries<any>(contents)) {
+				const schema = content["schema"];
+				if (!schema) {
+					continue;
+				}
+
+				const schemaRef = content["schema"]["$ref"];
+
+				if (contentType === "multipart/form-data") {
+					const operationName = operation["operationId"];
+
+					if (!schemaRef) {
+						const formSchemaName = `${operationName
+							.charAt(0)
+							.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
+
+						endpointToFormRequestNameMap.set(operationName, formSchemaName);
+
+						// process form data here
+						iLog(
+							1,
+							chalk.cyanBright(
+								`Parsing form data ${formSchemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+							)
+						);
+						requestComponents.set(
+							formSchemaName,
+							new RequestComponent({
+								componentType: EComponentType.Request,
+								name: formSchemaName,
+								properties: Object.entries<any>(content["schema"]["properties"]).map(
+									([propertyName, property]) => {
+										return new Property({
+											name: propertyName,
+											type:
+												property["format"] === "binary"
+													? "File"
+													: property["type"],
+											nullable: property["nullable"] || false,
+											format: property["format"],
+											referenceIsEnum: false,
+											isFormField: true,
+										});
+									}
+								),
+								requiredProperties: content["schema"]["required"] || [],
+							})
+						);
+						continue;
+					} else {
+						// $ref schema — map to the actual ref name so requestComponents lookup works
+						const refSchemaName = schemaRef.split("/").pop();
+						endpointToFormRequestNameMap.set(operationName, refSchemaName);
+					}
+				}
+
+				const schemaName = schemaRef.split("/").pop();
+				iLog(
+					1,
+					chalk.cyanBright(
+						`Parsing request ${schemaName} in endpoint ${method.toUpperCase()} ${endpoint}`
+					)
+				);
+				requestNames.add(schemaName);
+			}
+		}
+	}
+	log(chalk.greenBright("OpenAPI document parsed successfully."));
+	log(chalk.blueBright("Processing components..."));
+
+	const components = openApiDocument["components"]?.["schemas"];
+	if (!components) {
+		log(chalk.red("No components found in OpenAPI document."));
+	}
+
+	log(chalk.blue("Scanning for enums..."));
+	for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
+		if (schema["enum"]) {
+			iLog(
+				1,
+				chalk.cyanBright(`Found enum ${schemaName} with values: ${schema["enum"].join(", ")}`)
+			);
+			enumNames.add(schemaName);
+		}
+	}
+
+	for (const [schemaName, schema] of Object.entries<any>(components ?? {})) {
+		iLog(1, chalk.cyanBright(`Processing component schema ${schemaName}...`));
+
+		// dumb hack
+		if (schemaName === "IFormFile") {
+			iLog(2, chalk.cyanBright.dim("Processing as IFormFile model"));
+			continue;
+		}
+
+		if (schema["enum"]) {
+			iLog(2, chalk.cyanBright.dim("Processing as enum"));
+			enumComponents.set(
+				schemaName,
+				new EnumComponent({
+					name: schemaName,
+					values: schema["enum"],
+					enumNames: schema["x-enumNames"],
+					type: schema["type"] || "string",
+				})
+			);
+			continue;
+		}
+
+		if (requestNames.has(schemaName)) {
+			iLog(2, chalk.cyanBright.dim("Processing as request"));
+			requestComponents.set(
+				schemaName,
+				new RequestComponent({
+					name: schemaName,
+					requiredProperties: schema["required"] || [],
+					componentType: EComponentType.Request,
+					properties: Object.entries<any>(schema["properties"]).map(
+						([propertyName, property]) => {
+							let nullable = property["nullable"] || !!property["$ref"] || false;
+							if (schema["required"]) {
+								if (schema["required"].includes(propertyName)) {
+									nullable = false;
+								}
+							}
+							const referenceIsEnum =
+								enumNames.has(property["$ref"]?.split("/").pop()) ||
+								enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+							return new Property({
+								name: propertyName,
+								type: property["type"],
+								nullable: nullable,
+								format: property["format"],
+								["$ref"]: property["$ref"],
+								referenceIsEnum,
+								items: property["items"],
+								additionalProperties: property["additionalProperties"],
+								isFormField: false,
+							});
+						}
+					),
+				})
+			);
+			continue;
+		}
+
+		if (responseNames.has(schemaName)) {
+			iLog(2, chalk.cyanBright.dim("Processing as response"));
+			responseComponents.set(
+				schemaName,
+				new ResponseComponent({
+					name: schemaName,
+					requiredProperties: schema["required"] || [],
+					properties: Object.entries<any>(schema["properties"]).map(
+						([propertyName, property]) => {
+							let nullable = property["nullable"] || !!property["$ref"] || false;
+							let refName = property["$ref"];
+							if (schema["required"]) {
+								if (schema["required"].includes(propertyName)) {
+									nullable = false;
+								}
+							}
+							let type = property["type"];
+							if (!type && property["oneOf"]) {
+								const oneOf = property["oneOf"];
+								type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+								refName = type;
+								nullable = nullable || oneOf.some((item: any) => item["nullable"]);
+							}
+							const referenceIsEnum =
+								enumNames.has(property["$ref"]?.split("/").pop()) ||
+								enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+							return new Property({
+								name: propertyName,
+								type,
+								nullable: nullable,
+								format: property["format"],
+								["$ref"]: refName,
+								referenceIsEnum,
+								items: property["items"],
+								additionalProperties: property["additionalProperties"],
+								isFormField: false,
+							});
+						}
+					),
+					componentType: EComponentType.Response,
+				})
+			);
+			continue;
+		}
+
+		iLog(2, chalk.cyanBright.dim("Processing as model"));
+		// IFormFile doesn't have properties, it's just type: string, format: binary
+
+		modelComponents.set(
+			schemaName,
+			new ModelComponent({
+				name: schemaName,
+				requiredProperties: schema["required"] || [],
+				componentType: EComponentType.Model,
+				properties: Object.entries<any>(schema["properties"] || {}).map(([propertyName, property]) => {
+					let nullable = property["nullable"] || !!property["$ref"] || false;
+					let refName = property["$ref"];
+					if (schema["required"]) {
+						if (schema["required"].includes(propertyName)) {
+							nullable = false;
+						}
+					}
+					let type = property["type"];
+					if (!type && property["oneOf"]) {
+						const oneOf = property["oneOf"];
+						type = oneOf.find((item: any) => item["$ref"])?.["$ref"]?.split("/").pop() || "unknown";
+						refName = type;
+						nullable = nullable || oneOf.some((item: any) => item["nullable"]);
+					}
+					const referenceIsEnum =
+						enumNames.has(property["$ref"]?.split("/").pop()) ||
+						enumNames.has(property["items"]?.["$ref"]?.split("/").pop());
+					return new Property({
+						name: propertyName,
+						type,
+						nullable: nullable,
+						format: property["format"],
+						["$ref"]: refName,
+						referenceIsEnum,
+						items: property["items"],
+						additionalProperties: property["additionalProperties"],
+						isFormField: false,
+					});
+				}),
+			})
+		);
+	}
+	log(chalk.greenBright("Components processed successfully."));
+
+	log(chalk.blueBright("Generating client code..."));
+
+	const generatedOn = new Date().toISOString();
+	const headerCommentLines = [
+		"// -----------------------------------------------------------------------------",
+		"//  AUTO-GENERATED FILE — apx.rest",
+		"//  Do not modify this file directly.",
+		"// -----------------------------------------------------------------------------",
+		`//  Generated on: ${generatedOn}`,
+		`//  Source OpenAPI document: ${documentUrl}`,
+		"//  This file will be overwritten on regeneration.",
+		"//",
+		"//  Regenerate with:",
+		"//    npx apx-gen",
+		"//",
+		"//  Customize generation with:",
+		"//    apx-rest-config.json",
+		"// -----------------------------------------------------------------------------",
+	];
+
+	let outputStr = `${headerCommentLines.join("\n")}\n\n`;
+	outputStr += "/* eslint-disable */\n\n";
+
+	outputStr +=
+		'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';
+
+	for (const requestComponent of requestComponents.values()) {
+		outputStr += requestComponent.render();
+		outputStr += "\n\n";
+	}
+
+	for (const responseComponent of responseComponents.values()) {
+		outputStr += responseComponent.render();
+		outputStr += "\n\n";
+	}
+
+	for (const enumComponent of enumComponents.values()) {
+		outputStr += enumComponent.render();
+		outputStr += "\n\n";
+	}
+
+	for (const modelComponent of modelComponents.values()) {
+		outputStr += modelComponent.render();
+		outputStr += "\n\n";
+	}
+
+	const paths: ApiPath[] = [];
+
+	for (const [endpoint, apiPath] of Object.entries<any>(openApiDocument["paths"])) {
+		for (const [method, operation] of Object.entries<any>(apiPath)) {
+			const requestBodyContents = operation.requestBody?.content as Record<string, any>;
+			const requestInnerContents = requestBodyContents
+				? Array.from(Object.values(requestBodyContents))[0]
+				: {};
+			const responseContents = operation.responses;
+			const responseInnerContents = Array.from(Object.values(responseContents))[0] as any;
+
+			const formRequest = endpointToFormRequestNameMap.get(operation.operationId);
+			let requestComponentName = requestInnerContents.schema?.$ref?.split("/").pop();
+			if (formRequest) {
+				requestComponentName = formRequest;
+			}
+
+			paths.push(
+				new ApiPath({
+					endpoint,
+					method,
+					parameters: operation.parameters,
+					operationId: operation.operationId,
+					requestComponentName: requestComponentName,
+					responseComponentName: responseInnerContents.content?.[
+						"application/json"
+					]?.schema?.$ref
+						?.split("/")
+						.pop(),
+					isStreamed: streamedEndpoints.includes(endpoint),
+					isFormEndpoint: !!formRequest,
+				})
+			);
+		}
+	}
+
+	if (clientBaseUrl.startsWith("http")) {
+		clientBaseUrl = `"${clientBaseUrl}"`;
+	}
+
+	outputStr += `export class ${clientName} extends ApiClient {\n`;
+	outputStr += `\tpublic constructor() {\n`;
+	outputStr += `\t\tsuper(${clientBaseUrl});\n`;
+	outputStr += `\t}\n`;
+	outputStr += `\n`;
+
+	for (const apiPath of paths) {
+		outputStr += `\t${apiPath.render()}\n`;
+	}
+
+	outputStr += "}";
+
+	log(chalk.greenBright("Client code generated successfully."));
+
+	return outputStr;
+}
+
+export type TApiPathDto = {
 	endpoint: string;
 	method: string;
 	operationId: string;
@@ -461,18 +504,18 @@ type TApiPathDto = {
 	parameters?: TApiParameter[];
 };
 
-function stripUrlChars(str: string): string {
+export function stripUrlChars(str: string): string {
 	const a = splitAtUrlChars(str);
 	const b = a.map((s) => s.charAt(0).toUpperCase() + s.slice(1));
 	const c = b.join("");
 	return c;
 }
 
-function splitAtUrlChars(str: string): string[] {
+export function splitAtUrlChars(str: string): string[] {
 	return str.split(/[^a-zA-Z0-9]/g);
 }
 
-type TApiParameter = {
+export type TApiParameter = {
 	in: string;
 	name: string;
 	required: boolean;
@@ -483,7 +526,7 @@ type TApiParameter = {
 	};
 };
 
-class ApiPath implements TApiPathDto {
+export class ApiPath implements TApiPathDto {
 	public endpoint: string;
 	public method: string;
 	public operationId: string;
@@ -814,14 +857,14 @@ ${formDataBlock}\t\tfor await (const chunkDto of this.${clientFunctionName}Itera
 	}
 }
 
-type TEnumComponent = {
+export type TEnumComponent = {
 	name: string;
 	values: string[];
 	type: string;
 	enumNames?: string[];
 };
 
-class EnumComponent implements TEnumComponent {
+export class EnumComponent implements TEnumComponent {
 	public name: string;
 	public values: string[];
 	public enumNames?: string[];
@@ -861,20 +904,20 @@ ${this.values.map((value, index) => `\t${this.getEnumName(index)} = ${this.forma
 	}
 }
 
-enum EComponentType {
+export enum EComponentType {
 	Request,
 	Response,
 	Model,
 }
 
-type TComponentDto = {
+export type TComponentDto = {
 	name: string;
 	requiredProperties: string[];
 	properties: Property[];
 	componentType: EComponentType;
 };
 
-class Component implements TComponentDto {
+export class Component implements TComponentDto {
 	public name: string;
 	public requiredProperties: string[];
 	public properties: Property[];
@@ -1012,9 +1055,9 @@ class Component implements TComponentDto {
 	}
 }
 
-class ModelComponent extends Component { }
+export class ModelComponent extends Component { }
 
-class RequestComponent extends Component {
+export class RequestComponent extends Component {
 	public override render(): string {
 		let str = `export type T${this.name} = { \n`;
 		for (const property of this.properties) {
@@ -1029,7 +1072,7 @@ class RequestComponent extends Component {
 	}
 }
 
-class ResponseComponent extends Component {
+export class ResponseComponent extends Component {
 	public get isUnionType(): boolean {
 		return responsesMarkedAsUnions.has(this.name);
 	}
@@ -1083,7 +1126,7 @@ ${this.properties
 	}
 }
 
-type TPropertyDto = {
+export type TPropertyDto = {
 	name: string;
 	type?: string;
 	nullable: boolean;
@@ -1095,7 +1138,7 @@ type TPropertyDto = {
 	isFormField: boolean;
 };
 
-class Property implements TPropertyDto {
+export class Property implements TPropertyDto {
 	public name: string;
 	public type?: string;
 	public nullable: boolean;

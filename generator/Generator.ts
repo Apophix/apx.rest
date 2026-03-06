@@ -54,25 +54,47 @@ export class Generator {
 	}
 
 	private async generateApi(configProvider: ConfigProvider): Promise<void> {
-		log(chalk.blueBright("Fetching OpenAPI document..."));
+		const documentInput = await configProvider.getValue<string>("openApiJsonDocumentUrl");
+		const isFileInput = !documentInput.startsWith("http://") && !documentInput.startsWith("https://");
 
-		const ignoreTlsErrors = await configProvider.getValue<boolean>("ignoreTlsErrors");
-		const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-		if (ignoreTlsErrors) {
-			log(chalk.yellow("Warning: TLS certificate validation is disabled for this request (ignoreTlsErrors: true)."));
-			process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+		let openApiDocument: unknown;
+		let documentUrl: string;
+
+		if (isFileInput) {
+			log(chalk.blueBright("Reading OpenAPI document from file..."));
+			const filePath = path.isAbsolute(documentInput)
+				? documentInput
+				: path.join(process.cwd(), documentInput);
+			documentUrl = filePath;
+			try {
+				const fileContents = await fs.readFile(filePath, { encoding: "utf-8" });
+				openApiDocument = JSON.parse(fileContents);
+			} catch (error) {
+				log(chalk.red(`Failed to read OpenAPI document from file: ${filePath}`));
+				return;
+			}
+			log(chalk.greenBright("OpenAPI document read from file successfully."));
+		} else {
+			log(chalk.blueBright("Fetching OpenAPI document..."));
+			documentUrl = documentInput;
+
+			const ignoreTlsErrors = await configProvider.getValue<boolean>("ignoreTlsErrors");
+			const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+			if (ignoreTlsErrors) {
+				log(chalk.yellow("Warning: TLS certificate validation is disabled for this request (ignoreTlsErrors: true)."));
+				process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+			}
+
+			const response = await fetch(documentUrl);
+
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
+			if (!response.ok) {
+				log(chalk.red("Failed to fetch OpenAPI document."));
+				return;
+			}
+			openApiDocument = await response.json();
+			log(chalk.greenBright("OpenAPI document fetched successfully."));
 		}
-
-		const documentUrl = await configProvider.getValue<string>("openApiJsonDocumentUrl");
-		const response = await fetch(documentUrl);
-
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
-		if (!response.ok) {
-			log(chalk.red("Failed to fetch OpenAPI document."));
-			return;
-		}
-		const openApiDocument = await response.json();
-		log(chalk.greenBright("OpenAPI document fetched successfully."));
 
 		const streamedEndpoints = await configProvider.getValue<string[]>("streamedEndpoints");
 		const clientName = await configProvider.getValue<string>("clientName");

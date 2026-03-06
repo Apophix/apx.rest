@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/apx.rest)](https://www.npmjs.com/package/apx.rest)
 [![CI](https://github.com/Apophix/apx.rest/actions/workflows/ci.yml/badge.svg)](https://github.com/Apophix/apx.rest/actions/workflows/ci.yml)
 
-A powerful TypeScript code generation tool for REST APIsthat generates type-safe API clients from OpenAPI specifications.
+A powerful TypeScript code generation tool for REST APIs that generates type-safe HTTP clients from OpenAPI specifications.
 
 ## 🚀 Features
 
@@ -76,6 +76,7 @@ for await (const data of client.getDataStream()) {
 ### 4. Next.js Configuration (Required)
 
 > I know almost nothing about the node/npm package ecosystem, so if someone knows why this is necessary please let me know.
+> I'm also unsure if this is still needed after the most recent updates to this package, I don't work much with Next.js anymore. 
 
 For Next.js projects, you need to add `apx.rest` to the `transpilePackages` array in your `next.config.js` to ensure the package is properly transpiled:
 
@@ -108,12 +109,12 @@ This ensures that the TypeScript package is properly compiled for your Next.js a
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `openApiJsonDocumentUrl` | string | URL to your OpenAPI/Swagger JSON document |
+| `openApiJsonDocumentUrl` | string | URL to your OpenAPI/Swagger JSON document, or a file path (absolute or relative) to a local JSON file |
 | `clientName` | string | Name of the generated client class |
 | `clientBaseUrlValue` | string | Base URL for API requests |
 | `outputBaseDirectory` | string | Directory where client will be generated |
 | `streamedEndpoints` | string[] | List of endpoints that return streaming data |
-| `ignoreTlsErrors` | boolean | Disable TLS certificate validation when fetching the OpenAPI document. Default: `false`. Only enable for local dev with self-signed certs — never in production. |
+| `ignoreTlsErrors` | boolean | Disable TLS certificate validation when fetching the OpenAPI document. Default: `false`. Only enable for local dev with self-signed certs — not recommended if generating from a third-party source. |
 
 ### Multiple APIs Example
 
@@ -292,32 +293,3 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 ---
 
 **apx.rest** - Making REST API consumption type-safe and effortless! 🚀
-
-
---- 
-
-### ASP.NET Swagger Configuration
-
-Install NuGet package: 
-`Unchase.Swashbuckle.AspNetCore.Extensions`
-
-Add these to `Program.cs`: 
-
-```csharp
-builder.Services.AddSwaggerGen(o =>
-{
-	o.SupportNonNullableReferenceTypes();
-});
-
-builder.Services.Configure<JsonOptions>(o =>
-{
-	o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-	o.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
-	o.SerializerOptions.PropertyNameCaseInsensitive = true;
-	o.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
-
-builder.Services.ConfigureSwaggerGen(o => o.AddEnumsWithValuesFixFilters());
-```
-
-> I'm slightly unsure which of these are necessary, but enums will not work if you don't have at least some of that... so.

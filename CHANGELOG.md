@@ -1,5 +1,11 @@
 # apx.rest
 
+## 1.2.1
+
+### Patch Changes
+
+- 630369d: Upgrade dependencies to address security advisories
+
 ## 1.2.0
 
 ### Minor Changes

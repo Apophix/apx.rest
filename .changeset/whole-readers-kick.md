@@ -2,4 +2,4 @@
 "apx.rest": patch
 ---
 
-Upgrade dependencies
+Upgrade dependencies to address security advisories

@@ -439,7 +439,10 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 	];
 
 	let outputStr = `${headerCommentLines.join("\n")}\n\n`;
-	outputStr += "/* eslint-disable */\n\n";
+	outputStr += "/* eslint-disable */\n";
+	// Generated code can declare unused imports/parameters; suppress the
+	// TypeScript "declared but never read" diagnostic (TS6133) file-wide.
+	outputStr += "// @ts-nocheck\n\n";
 
 	outputStr +=
 		'import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest";\n\n';

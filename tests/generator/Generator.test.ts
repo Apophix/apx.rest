@@ -47,6 +47,16 @@ describe("generateOutputString — file header & boilerplate", () => {
 		expect(out).toContain("/* eslint-disable */");
 	});
 
+	it("contains the @ts-nocheck suppression (TS6133)", () => {
+		const out = gen(minimalDoc());
+		expect(out).toContain("// @ts-nocheck");
+	});
+
+	it("places @ts-nocheck before the first import so it applies file-wide", () => {
+		const out = gen(minimalDoc());
+		expect(out.indexOf("// @ts-nocheck")).toBeLessThan(out.indexOf("import {"));
+	});
+
 	it("contains the apx.rest import statement", () => {
 		const out = gen(minimalDoc());
 		expect(out).toContain('import { ApiClient, type TApiRequestOptions, type TApiClientResult } from "apx.rest"');

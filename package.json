@@ -27,7 +27,7 @@
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"release": "changeset publish --provenance",
+		"release": "changeset publish",
 		"prepublishOnly": "npm run build"
 	},
 	"keywords": [

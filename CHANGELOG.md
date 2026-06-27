@@ -1,5 +1,11 @@
 # apx.rest
 
+## 1.2.4
+
+### Patch Changes
+
+- 27c992b: Generated clients now emit `// @ts-nocheck` alongside the existing `/* eslint-disable */` banner, suppressing the TypeScript "declared but never read" error (TS6133) that could surface in consumers compiling generated output with `noUnusedLocals`/`noUnusedParameters` enabled.
+
 ## 1.2.3
 
 ### Patch Changes

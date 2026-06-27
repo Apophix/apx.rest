@@ -403,6 +403,29 @@ describe("ApiClient — postFormData()", () => {
 		expect(mockFetch.mock.calls[0][1].body).toBe(fd);
 	});
 
+	it("does NOT set Content-Type when none is configured (lets fetch add the multipart boundary)", async () => {
+		const client = new TestClient("https://api.example.com/");
+		mockFetch.mockResolvedValue(makeFetchResponse(200, "{}"));
+		await client.postFormData("upload", new FormData());
+		expect(mockFetch.mock.calls[0][1].headers["Content-Type"]).toBeUndefined();
+	});
+
+	it("deletes a configured Content-Type header (to allow browser multipart boundary)", async () => {
+		const client = new TestClient("https://api.example.com/");
+		client.setHeader("Content-Type", "application/json");
+		mockFetch.mockResolvedValue(makeFetchResponse(200, "{}"));
+		await client.postFormData("upload", new FormData());
+		expect(mockFetch.mock.calls[0][1].headers["Content-Type"]).toBeUndefined();
+	});
+
+	it("deletes a persistent Content-Type header (to allow browser multipart boundary)", async () => {
+		const client = new TestClient("https://api.example.com/");
+		client.setHeader("Content-Type", "application/json", HeaderType.Persistent);
+		mockFetch.mockResolvedValue(makeFetchResponse(200, "{}"));
+		await client.postFormData("upload", new FormData());
+		expect(mockFetch.mock.calls[0][1].headers["Content-Type"]).toBeUndefined();
+	});
+
 	it("returns parsed JSON on OK response", async () => {
 		const client = new TestClient("https://api.example.com/");
 		mockFetch.mockResolvedValue(makeFetchResponse(200, '{"ok":true}'));

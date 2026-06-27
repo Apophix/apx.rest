@@ -164,10 +164,12 @@ export abstract class ApiClient {
 		return { data, response };
 	}
 
-	public async postFormData<T>(path: string, formData: FormData, options?: TApiRequestOptions): Promise<TApiResponse<T>> { 
+	public async postFormData<T>(path: string, formData: FormData, options?: TApiRequestOptions): Promise<TApiResponse<T>> {
 		const url = this.buildUrl(path);
 		options = this.buildRequestOptions(options);
 		const headers = await this.buildHeaders(options);
+		// Do NOT set Content-Type — the browser sets it with the multipart boundary
+		delete headers["Content-Type"];
 
 		const response = await fetch(url, {
 			method: "POST",

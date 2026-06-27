@@ -1,5 +1,12 @@
 # apx.rest
 
+## 1.2.3
+
+### Patch Changes
+
+- 71227c8: Bump transitive `esbuild` to >= 0.28.1 (via override, covering both the `tsx` and `vite` dependency paths) to resolve a Windows-only arbitrary file read in the esbuild dev server (Dependabot #8, low).
+- 71227c8: Bump transitive `vite` to >= 8.0.16 to resolve two Windows-only security advisories: a `server.fs.deny` bypass via alternate paths (Dependabot #10, high) and an NTLMv2 hash disclosure in `launch-editor` via UNC path handling (#11, medium).
+
 ## 1.2.2
 
 ### Patch Changes

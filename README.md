@@ -185,7 +185,7 @@ Patterns are globs. A glob is a text pattern with wildcard characters.
 
 More rules:
 
-- A path segment is the text between two `/` characters.
+- A path segment is the text between two `/` characters. It can be empty: `/a//b` has an empty segment between `a` and `b`, and `**` matches it.
 - All other characters match only themselves. This includes `.`, `+`, `(`, `)`, `[`, `]`, and the `{` `}` braces of path parameters. For example, `/users/{id}` does not match `/users/{userId}`.
 - Use `*` to match any path parameter name. For example, `/users/*/orders` matches `/users/{id}/orders` and `/users/{userId}/orders`.
 - `**` inside a segment, such as `v**`, works the same as `*`. It does not cross a `/`.

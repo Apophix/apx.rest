@@ -186,6 +186,18 @@ describe("globToRegExp()", () => {
 			expect(matches("**", "/a/b/c")).toBe(true);
 		});
 
+		it("matches empty segments from consecutive slashes", () => {
+			expect(matches("/**", "/users//active")).toBe(true);
+			expect(matches("/admin/**", "/admin//jobs")).toBe(true);
+			expect(matches("/**/health", "//health")).toBe(true);
+			expect(matches("/api/**/export", "/api//v1//export")).toBe(true);
+		});
+
+		it("keeps the literal prefix bounded when empty segments follow", () => {
+			expect(matches("/admin/**", "/administrator//x")).toBe(false);
+			expect(matches("/**/health", "/api//healthz")).toBe(false);
+		});
+
 		it("supports two double-star segments in one pattern", () => {
 			expect(matches("/**/internal/**", "/internal")).toBe(true);
 			expect(matches("/**/internal/**", "/api/internal/jobs/{id}")).toBe(true);

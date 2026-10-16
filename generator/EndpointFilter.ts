@@ -4,7 +4,7 @@
  * Patterns are globs matched against the OpenAPI path keys (e.g. "/users/{id}"):
  *   *   any run of characters inside one path segment (never crosses "/")
  *   ?   exactly one character inside one path segment
- *   **  as a whole segment: zero or more path segments
+ *   **  as a whole segment: zero or more path segments (empty segments included)
  *
  * Every other character is literal, including "{" and "}" of path parameters.
  * Matching is case-sensitive and ignores leading/trailing slash differences.
@@ -62,7 +62,8 @@ export function globToRegExp(pattern: string): RegExp {
 	let source = "^";
 	for (const segment of segments) {
 		if (segment === "**") {
-			source += "(?:/[^/]+)*";
+			// [^/]* (not +) so that empty segments, as in "/a//b", are also matched
+			source += "(?:/[^/]*)*";
 		} else {
 			source += `/${segmentToRegExpSource(segment)}`;
 		}

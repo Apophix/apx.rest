@@ -140,6 +140,40 @@ describe("ConfigProvider — getValue()", () => {
 		expect(await provider.getValue("excludeEndpoints")).toEqual(["/users/admin"]);
 	});
 
+	it("follows apiIndex changes made after preload", async () => {
+		mockAccess.mockResolvedValue(undefined);
+		mockReadFile.mockResolvedValue(
+			validConfigFile([{ clientName: "FirstClient" }, { clientName: "SecondClient" }])
+		);
+		const provider = new ConfigProvider();
+		await provider.preload();
+		expect(await provider.getValue("clientName")).toBe("FirstClient");
+		provider.apiIndex = 1;
+		expect(await provider.getValue("clientName")).toBe("SecondClient");
+		provider.apiIndex = 0;
+		expect(await provider.getValue("clientName")).toBe("FirstClient");
+	});
+
+	it("falls back to defaults per entry, not from the previous entry", async () => {
+		mockAccess.mockResolvedValue(undefined);
+		mockReadFile.mockResolvedValue(
+			validConfigFile([{ includeEndpoints: ["/users/**"] }, { clientName: "SecondClient" }])
+		);
+		const provider = new ConfigProvider();
+		await provider.preload();
+		provider.apiIndex = 1;
+		expect(await provider.getValue("includeEndpoints")).toEqual([]);
+	});
+
+	it("throws when apiIndex is out of bounds after preload", async () => {
+		mockAccess.mockResolvedValue(undefined);
+		mockReadFile.mockResolvedValue(validConfigFile([{ clientName: "OnlyClient" }]));
+		const provider = new ConfigProvider();
+		await provider.preload();
+		provider.apiIndex = 1;
+		await expect(provider.getValue("clientName")).rejects.toThrow("apiIndex 1 is out of bounds.");
+	});
+
 	it("throws when key not found in either config", async () => {
 		mockAccess.mockResolvedValue(undefined);
 		mockReadFile.mockResolvedValue(validConfigFile([{ clientName: "X" }]));

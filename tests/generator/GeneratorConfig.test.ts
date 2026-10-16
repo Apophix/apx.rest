@@ -89,6 +89,34 @@ describe("Generator.generate() — endpoint filter config", () => {
 		expect(documentReads).toHaveLength(0);
 	});
 
+	it("splits one document into several clients with per-entry filters", async () => {
+		await fs.writeFile(path.join(workDir, "openapi.json"), JSON.stringify(openApiDoc));
+		const entry = (clientName: string, includeEndpoints: string[]) => ({
+			openApiJsonDocumentUrl: "openapi.json",
+			clientName,
+			clientBaseUrlValue: "https://api.example.com",
+			outputBaseDirectory: "out",
+			includeEndpoints,
+		});
+		await fs.writeFile(
+			path.join(workDir, "apx-rest-config.json"),
+			JSON.stringify({
+				apis: [entry("UsersClient", ["/users/**"]), entry("InternalClient", ["/internal/**"])],
+			})
+		);
+
+		await new Generator().generate();
+
+		const users = await fs.readFile(path.join(workDir, "out", "UsersClient.ts"), { encoding: "utf-8" });
+		const internal = await fs.readFile(path.join(workDir, "out", "InternalClient.ts"), { encoding: "utf-8" });
+		expect(users).toContain("export class UsersClient extends ApiClient");
+		expect(users).toContain("public async listUsers(");
+		expect(users).not.toContain("getMetrics(");
+		expect(internal).toContain("export class InternalClient extends ApiClient");
+		expect(internal).toContain("public async getMetrics(");
+		expect(internal).not.toContain("listUsers(");
+	});
+
 	it("rejects an invalid excludeEndpoints entry", async () => {
 		await expect(runWithConfig({ excludeEndpoints: [42] })).rejects.toThrow(
 			'"excludeEndpoints" entry at index 0 must be a non-empty string.'

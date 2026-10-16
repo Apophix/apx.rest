@@ -9,7 +9,6 @@ export class ConfigProvider {
 	public apiIndex: number = 0;
 
 	private userApiConfigs: Record<string, any>[] | null = null;
-	private userConfig?: Record<string, any> | null;
 	private defaultConfig?: Record<string, any>;
 
 	public async preload(): Promise<void> {
@@ -65,11 +64,8 @@ export class ConfigProvider {
 		return userConfigArray?.length ?? 0; 
 	}
 
+	// not cached: apiIndex changes between APIs, and the parsed array is already cached
 	private async getUserConfig(): Promise<Record<string, any> | null> {
-		if (this.userConfig !== undefined) {
-			return this.userConfig;
-		}
-
 		const userConfigArray = await this.getUserApiConfigs();
 		if (!userConfigArray) {
 			log(chalk.red("No user config found."));
@@ -80,9 +76,7 @@ export class ConfigProvider {
 			log(chalk.red(`apiIndex ${this.apiIndex} is out of bounds.`));
 			throw new Error(`apiIndex ${this.apiIndex} is out of bounds.`);
 		}
-		this.userConfig = userConfigArray[this.apiIndex];
-
-		return this.userConfig;
+		return userConfigArray[this.apiIndex];
 	}
 
 	// this is weird and stupid but we may want to change how the default config is loaded later so. this makes it easier. I guess.

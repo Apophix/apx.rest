@@ -1,5 +1,15 @@
 # apx.rest
 
+## 1.3.0
+
+### Minor Changes
+
+- 575d1ec: Add `includeEndpoints` and `excludeEndpoints` config options to generate client methods for only part of an API. Each option takes a list of glob patterns (`*`, `?`, `**`) that the generator matches against the OpenAPI path keys. An exclude match always wins over an include match. When both options are omitted, all endpoints are generated, as before. Component schemas are still emitted for every endpoint. The generator warns about patterns that match no endpoint and fails fast on invalid pattern lists. See "Filtering Endpoints" in the README.
+
+### Patch Changes
+
+- 6a0047a: Fix configs with more than one entry in `apis`. The config reader saved the first entry and ignored later ones, so every iteration generated the first client again and the other clients were never written. Each entry in `apis` now uses its own settings.
+
 ## 1.2.4
 
 ### Patch Changes

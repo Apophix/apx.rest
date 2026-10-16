@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { promises as fs } from "fs";
 import path from "path";
 import { ConfigProvider } from "./ConfigProvider.js";
+import { EndpointFilter, validatePatternList } from "./EndpointFilter.js";
 
 function log(...args: string[]) {
 	console.log(...args);
@@ -54,6 +55,16 @@ export class Generator {
 	}
 
 	private async generateApi(configProvider: ConfigProvider): Promise<void> {
+		// validate filter patterns before fetching so a config typo fails fast
+		const includeEndpoints = validatePatternList(
+			await configProvider.getValue<unknown>("includeEndpoints"),
+			"includeEndpoints"
+		);
+		const excludeEndpoints = validatePatternList(
+			await configProvider.getValue<unknown>("excludeEndpoints"),
+			"excludeEndpoints"
+		);
+
 		const documentInput = await configProvider.getValue<string>("openApiJsonDocumentUrl");
 		const isFileInput = !documentInput.startsWith("http://") && !documentInput.startsWith("https://");
 
@@ -105,6 +116,8 @@ export class Generator {
 			streamedEndpoints,
 			clientName,
 			clientBaseUrl,
+			includeEndpoints,
+			excludeEndpoints,
 		});
 
 		const outputPath = await configProvider.getValue<string>("outputBaseDirectory");
@@ -129,6 +142,13 @@ export type TGeneratorOptions = {
 	 * it will be wrapped in quotes so it becomes a string literal in the output.
 	 */
 	clientBaseUrl: string;
+	/**
+	 * Glob patterns for endpoint paths to generate. When empty or omitted, all
+	 * endpoints are generated. See EndpointFilter for the pattern syntax.
+	 */
+	includeEndpoints?: string[];
+	/** Glob patterns for endpoint paths to skip. Exclude wins over include. */
+	excludeEndpoints?: string[];
 };
 
 /**
@@ -146,6 +166,8 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 
 	const requestNames = new Set<string>();
 	const responseNames = new Set<string>();
+
+	const includedEndpoints = selectIncludedEndpoints(Object.keys(openApiDocument["paths"]), opts);
 
 	for (const [endpoint, apiPath] of Object.entries<any>(openApiDocument["paths"])) {
 		for (const [method, operation] of Object.entries<any>(apiPath)) {
@@ -195,6 +217,9 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 					const operationName = operation["operationId"];
 
 					if (!schemaRef) {
+						// inline form schemas belong to one endpoint — skip them when it is filtered out
+						if (!includedEndpoints.has(endpoint)) continue;
+
 						const formSchemaName = `${operationName
 							.charAt(0)
 							.toUpperCase()}${operationName.slice(1)}FormDataRequest`;
@@ -467,6 +492,10 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 	const paths: ApiPath[] = [];
 
 	for (const [endpoint, apiPath] of Object.entries<any>(openApiDocument["paths"])) {
+		if (!includedEndpoints.has(endpoint)) {
+			iLog(1, chalk.gray(`Skipping filtered endpoint ${endpoint}`));
+			continue;
+		}
 		for (const [method, operation] of Object.entries<any>(apiPath)) {
 			const requestBodyContents = operation.requestBody?.content as Record<string, any>;
 			const requestInnerContents = requestBodyContents
@@ -519,6 +548,37 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 	log(chalk.greenBright("Client code generated successfully."));
 
 	return outputStr;
+}
+
+/**
+ * Applies the include/exclude patterns to the document's endpoint paths and
+ * returns the set of paths to generate. Logs a summary and warns about
+ * patterns that matched nothing (usually a typo).
+ */
+function selectIncludedEndpoints(endpoints: string[], opts: TGeneratorOptions): Set<string> {
+	const filter = new EndpointFilter({
+		include: opts.includeEndpoints,
+		exclude: opts.excludeEndpoints,
+	});
+	const included = new Set(endpoints.filter((endpoint) => filter.isIncluded(endpoint)));
+
+	if (!filter.isActive) {
+		return included;
+	}
+
+	log(chalk.blueBright(`Endpoint filter: generating ${included.size} of ${endpoints.length} endpoint paths.`));
+	const unmatched = filter.getUnmatchedPatterns();
+	for (const pattern of unmatched.include) {
+		log(chalk.yellow(`Warning: includeEndpoints pattern "${pattern}" did not match any endpoint.`));
+	}
+	for (const pattern of unmatched.exclude) {
+		log(chalk.yellow(`Warning: excludeEndpoints pattern "${pattern}" did not match any endpoint.`));
+	}
+	if (included.size === 0) {
+		log(chalk.yellow("Warning: the endpoint filter excluded every endpoint. The client will have no methods."));
+	}
+
+	return included;
 }
 
 export type TApiPathDto = {

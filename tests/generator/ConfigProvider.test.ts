@@ -118,6 +118,28 @@ describe("ConfigProvider — getValue()", () => {
 		expect(val).toBe("src/clients");
 	});
 
+	it.each(["includeEndpoints", "excludeEndpoints"])(
+		"defaults %s to an empty array when the user config omits it",
+		async (key) => {
+			mockAccess.mockResolvedValue(undefined);
+			mockReadFile.mockResolvedValue(validConfigFile([{ clientName: "Client" }]));
+			const provider = new ConfigProvider();
+			await provider.preload();
+			expect(await provider.getValue(key)).toEqual([]);
+		}
+	);
+
+	it("returns user-supplied endpoint filter patterns", async () => {
+		mockAccess.mockResolvedValue(undefined);
+		mockReadFile.mockResolvedValue(
+			validConfigFile([{ includeEndpoints: ["/users/**"], excludeEndpoints: ["/users/admin"] }])
+		);
+		const provider = new ConfigProvider();
+		await provider.preload();
+		expect(await provider.getValue("includeEndpoints")).toEqual(["/users/**"]);
+		expect(await provider.getValue("excludeEndpoints")).toEqual(["/users/admin"]);
+	});
+
 	it("throws when key not found in either config", async () => {
 		mockAccess.mockResolvedValue(undefined);
 		mockReadFile.mockResolvedValue(validConfigFile([{ clientName: "X" }]));

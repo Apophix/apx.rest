@@ -67,9 +67,9 @@ describe("generateOutputString — file header & boilerplate", () => {
 		expect(out).toContain("https://my-server/api/v2/openapi.json");
 	});
 
-	it("contains a 'Generated on:' timestamp line", () => {
+	it("omits the generation timestamp so regeneration produces no diff", () => {
 		const out = gen(minimalDoc());
-		expect(out).toMatch(/Generated on: \d{4}-\d{2}-\d{2}T/);
+		expect(out).not.toContain("Generated on:");
 	});
 });
 

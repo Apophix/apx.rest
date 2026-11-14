@@ -69,14 +69,15 @@ export class Generator {
 		const isFileInput = !documentInput.startsWith("http://") && !documentInput.startsWith("https://");
 
 		let openApiDocument: unknown;
-		let documentUrl: string;
+		// the header uses the configured value, not a resolved path, so that
+		// output does not depend on where the repository is checked out
+		const documentUrl = documentInput;
 
 		if (isFileInput) {
 			log(chalk.blueBright("Reading OpenAPI document from file..."));
 			const filePath = path.isAbsolute(documentInput)
 				? documentInput
 				: path.join(process.cwd(), documentInput);
-			documentUrl = filePath;
 			try {
 				const fileContents = await fs.readFile(filePath, { encoding: "utf-8" });
 				openApiDocument = JSON.parse(fileContents);
@@ -87,7 +88,6 @@ export class Generator {
 			log(chalk.greenBright("OpenAPI document read from file successfully."));
 		} else {
 			log(chalk.blueBright("Fetching OpenAPI document..."));
-			documentUrl = documentInput;
 
 			const ignoreTlsErrors = await configProvider.getValue<boolean>("ignoreTlsErrors");
 			const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
@@ -131,7 +131,7 @@ export class Generator {
 }
 
 export type TGeneratorOptions = {
-	/** URL the document was fetched from — used in the file header comment. */
+	/** Configured URL or file path of the document — used in the file header comment. */
 	documentUrl: string;
 	/** List of endpoint paths that should use streaming iterables. */
 	streamedEndpoints: string[];
@@ -445,13 +445,13 @@ export function generateOutputString(openApiDocument: any, opts: TGeneratorOptio
 
 	log(chalk.blueBright("Generating client code..."));
 
-	const generatedOn = new Date().toISOString();
+	// Do not add a timestamp or other per-run value: output must be reproducible
+	// so that regeneration causes no diff and no merge conflicts.
 	const headerCommentLines = [
 		"// -----------------------------------------------------------------------------",
 		"//  AUTO-GENERATED FILE — apx.rest",
 		"//  Do not modify this file directly.",
 		"// -----------------------------------------------------------------------------",
-		`//  Generated on: ${generatedOn}`,
 		`//  Source OpenAPI document: ${documentUrl}`,
 		"//  This file will be overwritten on regeneration.",
 		"//",

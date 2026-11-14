@@ -18,8 +18,11 @@ const openApiDoc = {
 
 let workDir: string;
 
-async function runWithConfig(apiConfig: Record<string, any>): Promise<string> {
-	await fs.writeFile(path.join(workDir, "openapi.json"), JSON.stringify(openApiDoc));
+async function runWithConfig(
+	apiConfig: Record<string, any>,
+	document: object = openApiDoc
+): Promise<string> {
+	await fs.writeFile(path.join(workDir, "openapi.json"), JSON.stringify(document));
 	await fs.writeFile(
 		path.join(workDir, "apx-rest-config.json"),
 		JSON.stringify({
@@ -121,5 +124,106 @@ describe("Generator.generate() — endpoint filter config", () => {
 		await expect(runWithConfig({ excludeEndpoints: [42] })).rejects.toThrow(
 			'"excludeEndpoints" entry at index 0 must be a non-empty string.'
 		);
+	});
+});
+
+describe("Generator.generate() — reproducible output", () => {
+	// Includes each component type: request, form request, response, model, and enum.
+	const documentWithComponents = {
+		paths: {
+			"/users": {
+				post: {
+					operationId: "createUser",
+					requestBody: {
+						content: {
+							"application/json": { schema: { $ref: "#/components/schemas/CreateUserRequest" } },
+						},
+					},
+					responses: {
+						"200": {
+							content: {
+								"application/json": { schema: { $ref: "#/components/schemas/UserResponse" } },
+							},
+						},
+					},
+				},
+			},
+			"/avatars": {
+				post: {
+					operationId: "uploadAvatar",
+					requestBody: {
+						content: {
+							"multipart/form-data": {
+								schema: {
+									type: "object",
+									properties: { file: { type: "string", format: "binary" } },
+								},
+							},
+						},
+					},
+					responses: { "200": {} },
+				},
+			},
+		},
+		components: {
+			schemas: {
+				CreateUserRequest: {
+					type: "object",
+					properties: { name: { type: "string" } },
+				},
+				UserResponse: {
+					type: "object",
+					properties: {
+						createdAt: { type: "string", format: "date-time" },
+						role: { $ref: "#/components/schemas/Role" },
+						address: { $ref: "#/components/schemas/Address" },
+					},
+				},
+				Address: {
+					type: "object",
+					properties: { city: { type: "string" } },
+				},
+				Role: { type: "string", enum: ["Admin", "Member"] },
+			},
+		},
+	};
+
+	it("writes identical output across runs, times, and checkout locations", async () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		const firstDir = workDir;
+		const secondDir = await fs.mkdtemp(path.join(os.tmpdir(), "apx-rest-filter-"));
+		try {
+			vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+			const first = await runWithConfig({}, documentWithComponents);
+
+			vi.setSystemTime(new Date("2026-06-15T12:30:00.000Z"));
+			workDir = secondDir;
+			vi.spyOn(process, "cwd").mockReturnValue(secondDir);
+			const second = await runWithConfig({}, documentWithComponents);
+
+			expect(first).toContain("export type TCreateUserRequest = {");
+			expect(first).toContain("export type TUploadAvatarFormDataRequest = {");
+			expect(first).toContain("this.postFormData(`avatars`, formData, options)");
+			expect(first).toContain("export class UserResponse {");
+			expect(first).toContain("export class Address {");
+			expect(first).toContain("export enum Role {");
+			expect(second).toBe(first);
+		} finally {
+			vi.useRealTimers();
+			workDir = firstDir;
+			await fs.rm(secondDir, { recursive: true, force: true });
+		}
+	});
+
+	it("writes a local document path to the header as the config states it", async () => {
+		const out = await runWithConfig({});
+		expect(out).toContain("//  Source OpenAPI document: openapi.json");
+	});
+
+	it("reads a local document from an absolute path and writes that path to the header", async () => {
+		const absolutePath = path.join(workDir, "openapi.json");
+		const out = await runWithConfig({ openApiJsonDocumentUrl: absolutePath });
+		expect(out).toContain(`//  Source OpenAPI document: ${absolutePath}`);
+		expect(out).toContain("public async listUsers(");
 	});
 });
